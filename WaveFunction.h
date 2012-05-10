@@ -1,6 +1,6 @@
 /* 
  * File:   WaveFunction.h
- * Author: zigg
+ * Author: Sigve
  *
  * Created on May 9, 2012, 11:05 PM
  */

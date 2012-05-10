@@ -49,7 +49,8 @@ OBJECTFILES= \
 	${OBJECTDIR}/Orbital.o \
 	${OBJECTDIR}/includes/ziggurat.o \
 	${OBJECTDIR}/includes/ini.o \
-	${OBJECTDIR}/WaveFunction.o
+	${OBJECTDIR}/WaveFunction.o \
+	${OBJECTDIR}/ComputeGrid.o
 
 
 # C Compiler Flags
@@ -155,6 +156,11 @@ ${OBJECTDIR}/WaveFunction.o: WaveFunction.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
 	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/WaveFunction.o WaveFunction.cpp
+
+${OBJECTDIR}/ComputeGrid.o: ComputeGrid.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/ComputeGrid.o ComputeGrid.cpp
 
 # Subprojects
 .build-subprojects:

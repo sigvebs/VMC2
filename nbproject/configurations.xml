@@ -25,6 +25,8 @@
                    displayName="Source Files"
                    projectFiles="true">
       <logicalFolder name="f1" displayName="QD" projectFiles="true">
+        <itemPath>ComputeGrid.cpp</itemPath>
+        <itemPath>ComputeGrid.h</itemPath>
         <itemPath>QD/QDHamiltonian.cpp</itemPath>
         <itemPath>QD/QDHamiltonian.h</itemPath>
         <itemPath>QD/QDJastrow.cpp</itemPath>

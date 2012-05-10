@@ -9,6 +9,7 @@
 #include <mpi.h>
 #include "includes/ini.h"
 #include "ComputeOneWF.h"
+#include "ComputeGrid.h"
 
 using namespace std;
 
@@ -37,6 +38,9 @@ int main(int argc, char** argv) {
     switch (option) {
         case 0:
             new ComputeOneWF();
+            break;
+        case 1:
+            new ComputeGrid();
             break;
     }
 

@@ -1,6 +1,6 @@
 /* 
  * File:   QDOrbital.cpp
- * Author: zigg
+ * Author: Sigve
  * 
  * Created on May 10, 2012, 8:48 AM
  */
