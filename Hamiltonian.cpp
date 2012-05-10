@@ -1,0 +1,36 @@
+/* 
+ * File:   Hamiltonian.cpp
+ * Author: Sigve
+ * 
+ * Created on May 10, 2012, 9:46 AM
+ */
+
+#include "Hamiltonian.h"
+
+////////////////////////////////////////////////////////////////////////////////
+
+Hamiltonian::Hamiltonian() {
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Hamiltonian::Hamiltonian(const Hamiltonian& orig) {
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Hamiltonian::~Hamiltonian() {
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Hamiltonian::getEnergy(const mat & r) {
+    double EInteraction = 0;
+
+    if (usingJastrow)
+        EInteraction = interaction(r);
+
+    double EPotential = potential(r);
+
+    return EInteraction + EPotential;
+}
