@@ -11,10 +11,10 @@
 #include "QD/QDOrbital.h"
 #include "QD/QDJastrow.h"
 #include "QD/QDHamiltonian.h"
+#include "includes/ini.h"
 
 #include <cstdlib>
 #include <mpi.h>
-#include "includes/ini.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -29,47 +29,55 @@ ComputeOneWF::~ComputeOneWF() {
 ////////////////////////////////////////////////////////////////////////////////
 
 ComputeOneWF::ComputeOneWF() {
+    int accepted_tmp;
     double localE;
-    double alpha, beta, w;
-    int dim;
     long idum;
-    bool usingJastrow;
 
     //--------------------------------------------------------------------------
     // MPI
     int myRank, nNodes;
     MPI_Comm_size(MPI_COMM_WORLD, &nNodes);
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-
-    //--------------------------------------------------------------------------
-    // Parameters.
-    int McSamples;
-    bool importanceSampling;
-    int thermalization;
-    int nParticles;
-
-    //--------------------------------------------------------------------------
-    McSamples = 1e5;
-    importanceSampling = true;
-    thermalization = 1e4;
-
-    dim = 2;
-    alpha = 0.987;
-    alpha = 1.0;
-    beta = 0.4;
-    w = 1.0;
     idum = -1 - myRank - time(NULL);
-    nParticles = 2;
-
-    usingJastrow = false;
-    //--------------------------------------------------------------------------
-    E = 0;
-    Esq = 0;
-    accepted = 0;
-    int accepted_tmp;
 
     //--------------------------------------------------------------------------
-    // Configuring the wave function.
+    // Reading data from QD.ini
+    if (myRank == 0) {
+        cout << "Reading configuration from file " << endl;
+        ini INIreader("QD.ini");
+
+        McSamples = (int) INIreader.GetDouble("ComputeOneWF", "McSamples");
+        importanceSampling = INIreader.GetBool("ComputeOneWF", "importanceSampling");
+        thermalization = (int) INIreader.GetDouble("ComputeOneWF", "thermalization");
+
+        dim = INIreader.GetInt("ComputeOneWF", "dim");
+        alpha = INIreader.GetDouble("ComputeOneWF", "alpha");
+        beta = INIreader.GetDouble("ComputeOneWF", "beta");
+        w = INIreader.GetDouble("ComputeOneWF", "w");
+        nParticles = INIreader.GetInt("ComputeOneWF", "nParticles");
+
+        usingJastrow = INIreader.GetBool("ComputeOneWF", "usingJastrow");
+    }
+    //--------------------------------------------------------------------------
+    // Broadcasting data to all nodes.
+    if (myRank == 0)
+        cout << "Broadcasting data to nodes." << endl;
+
+    MPI_Bcast(&McSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&importanceSampling, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&thermalization, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&dim, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&alpha, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&beta, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&w, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&nParticles, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&usingJastrow, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    //--------------------------------------------------------------------------
+    // Configuring the wave function.    
+    if (myRank == 0)
+        cout << "Configuring the wave function." << endl;
+
     Orbital *orbital = new QDOrbital(dim, alpha, w);
     Jastrow * jastrow = NULL;
     if (usingJastrow)
@@ -81,11 +89,21 @@ ComputeOneWF::ComputeOneWF() {
     // If we are using brute force sampling we have to calculate the optimal step length
     if (!importanceSampling)
         wf.setOptimalStepLength();
-    
+
     //--------------------------------------------------------------------------
-    // Monte Carlo loop.
+    // Monte Carlo loop.    
     if (myRank == 0)
-        cout << "Starting Monte Carlo sampling" << endl;
+        cout
+            << "Starting Monte Carlo sampling with " << endl
+            << "\t McSamples = " << McSamples
+            << "\t alpha = " << alpha
+            << "\t beta = " << beta
+            << "\t w = " << w
+            << endl;
+
+    accepted = 0;
+    E = 0;
+    Esq = 0;
 
     for (int i = 0; i < McSamples + thermalization; i++) {
         for (int j = 0; j < nParticles; j++) {
@@ -104,10 +122,16 @@ ComputeOneWF::ComputeOneWF() {
     }
 
     //--------------------------------------------------------------------------
-    // Scaling results
-    E /= (McSamples * nParticles);
-    Esq /= (McSamples * nParticles);
-    accepted /= (McSamples * nParticles);
+    // Collecting and scaling results from all nodes.
+    if (myRank == 0)
+        cout << "Collecting and scaling results from all nodes." << endl;
+
+    MPI_Allreduce(MPI_IN_PLACE, &E, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &Esq, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &accepted, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    E /= (McSamples * nParticles * nNodes);
+    Esq /= (McSamples * nParticles * nNodes);
+    accepted /= (McSamples * nParticles * nNodes);
 
     //--------------------------------------------------------------------------
     // Printing results.

@@ -47,16 +47,20 @@ void Slater::init() {
     // Updating the whole matrix.
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
-            Dp(j, i) = orbital->evaluate(r_new.row(i), nx(j), ny(j));
-            Dm(j, i) = orbital->evaluate(r_new.row(i + N), nx(j), ny(j));
+            Dp(i, j) = orbital->evaluate(r_new.row(j), nx(i), ny(i));
+            Dm(i, j) = orbital->evaluate(r_new.row(j + N), nx(i), ny(i));
+            //Dp(j, i) = orbital->evaluate(r_new.row(i), nx(j), ny(j));
+            //Dm(j, i) = orbital->evaluate(r_new.row(i + N), nx(j), ny(j));
         }
     }
     Dp_new = Dp;
     Dm_new = Dm;
 
     // Calulating the inverse using Armadillo.
-    Dp_inv = inv(Dp).t();
-    Dm_inv = inv(Dm).t();
+    //Dp_inv = inv(Dp).t();
+    //Dm_inv = inv(Dm).t();
+    Dp_inv = inv(Dp);
+    Dm_inv = inv(Dm);
 
     Dp_inv_new = Dp_inv;
     Dm_inv_new = Dm_inv;

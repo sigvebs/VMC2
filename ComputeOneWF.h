@@ -16,7 +16,15 @@ public:
 private:
     double E;
     double Esq;
-    double accepted;
+    double accepted;    
+    
+    int McSamples;
+    bool importanceSampling;
+    int thermalization;
+    int nParticles;    
+    double alpha, beta, w;
+    bool usingJastrow;
+    int dim;
 };
 
 #endif	/* COMPUTEONEWF_H */

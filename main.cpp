@@ -19,12 +19,12 @@ int main(int argc, char** argv) {
     int option;
     
     // Collecting MPI information.
-    int my_rank;
+    int myRank;
     MPI_Init(NULL, NULL);
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 
     // Reading data from QD.ini
-    if (my_rank == 0) {
+    if (myRank == 0) {
         ini INIreader("QD.ini");
         option = (int) INIreader.GetInt("main", "option");
         cout << "Starting option: " << option << endl;

@@ -30,7 +30,7 @@ QDOrbital::QDOrbital(int dim, double alpha, double w) : w(w), Orbital(dim, alpha
     sqrtW = sqrt(w);
     sqrtWDividedAlpha = sqrt(w / alpha);
 
-/*
+#if 0 
     cout
             << "\talpha = " << alpha 
             << "\t w = " << w 
@@ -39,7 +39,7 @@ QDOrbital::QDOrbital(int dim, double alpha, double w) : w(w), Orbital(dim, alpha
             << "\t sqrtW = " << sqrtW
             << "\t sqrtWDividedAlpha = " << sqrtWDividedAlpha
             << endl;
- */ 
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////

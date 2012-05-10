@@ -60,6 +60,22 @@ WaveFunction::~WaveFunction() {
     delete slater;
     delete hamiltonian;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Used for numerical derivatives.
+
+double WaveFunction::evaluate(const mat &r) {
+    double psi;
+
+    psi = slater->evaluate(r);
+
+    // Adding the Jastrow part
+    if (usingJastrow)
+        psi *= exp(jastrow->evaluate(r));
+
+    return psi;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 bool WaveFunction::tryNewPositionBF(int activeParticle) {
@@ -118,12 +134,7 @@ bool WaveFunction::tryNewPosition(int active) {
 
     // Updating the quantum force.
     qForce = newQForce();
-    
-#if 0
-    if (qForce.max() > 1000 || qForce.min() < -1000)
-        cout << qForce << endl;
-#endif
-    
+
     //--------------------------------------------------------------------------
     // Calculating the ratio between the Green's functions.     
     double greens_function = 0;
@@ -209,8 +220,9 @@ mat WaveFunction::newQForce() {
 
 void WaveFunction::calculateEnergy() {
     double EKin = 0;
+    double EPot = 0;
 
-    // Calculating the Laplacian.
+    // Looping through all particles
     for (int i = 0; i < nParticles; i++) {
         // Finding the Orbitals' Laplacian.
         slater->computeGradient(i);
@@ -219,7 +231,7 @@ void WaveFunction::calculateEnergy() {
         if (usingJastrow) {
             // Finding the Jastrow factors Laplacian
             jastrow->computeGradient(rOld, i);
-            E += jastrow->getLaplacian(rOld, i);
+            EKin += jastrow->getLaplacian(rOld, i);
 
             // Dot product between the gradients of the orbital- and Jastrow function.
             rowvec gradient_orbital = slater->getGradient();
@@ -230,9 +242,10 @@ void WaveFunction::calculateEnergy() {
     }
 
     EKin = -0.5 * EKin;
+    EPot = hamiltonian->getEnergy(rOld);
 
     // Total energy
-    E = hamiltonian->getEnergy(rOld) + EKin;
+    E = EKin + EPot;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -256,19 +269,19 @@ void WaveFunction::setOptimalStepLength() {
 ////////////////////////////////////////////////////////////////////////////////
 
 double WaveFunction::difference(double step_length) {
-    double SL_samples = 1e3;
+    double SlSamples = 1e3;
     double accepted;
     double accepted_tmp;
     stepLength = step_length;
 
-    for (int i = 0; i < 2 * SL_samples; i++) {
+    for (int i = 0; i < 2 * SlSamples; i++) {
         for (int j = 0; j < nParticles; j++) {
 
             accepted_tmp = tryNewPositionBF(j);
-            if (i > SL_samples)
+            if (i > SlSamples)
                 accepted += accepted_tmp;
-            }
+        }
     }
 
-    return (double) accepted / (SL_samples * nParticles) - 0.5;
+    return (double) accepted / (SlSamples * nParticles) - 0.5;
 }
