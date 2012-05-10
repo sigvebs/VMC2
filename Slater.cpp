@@ -8,10 +8,12 @@
 #include "Slater.h"
 
 ////////////////////////////////////////////////////////////////////////////////
+
 Slater::Slater() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 Slater::Slater(int dim, int nParticles, Orbital *orbital)
 : dim(dim), nParticles(nParticles), N(nParticles / 2), orbital(orbital) {
     Dp = zeros(N, N);
@@ -34,61 +36,63 @@ Slater::Slater(int dim, int nParticles, Orbital *orbital)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 Slater::Slater(const Slater& orig) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 Slater::~Slater() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 void Slater::init() {
 
     // Updating the whole matrix.
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
-            Dp(i, j) = orbital->evaluate(r_new.row(j), nx(i), ny(i));
-            Dm(i, j) = orbital->evaluate(r_new.row(j + N), nx(i), ny(i));
-            //Dp(j, i) = orbital->evaluate(r_new.row(i), nx(j), ny(j));
-            //Dm(j, i) = orbital->evaluate(r_new.row(i + N), nx(j), ny(j));
+            Dp(i, j) = orbital->evaluate(rNew.row(j), nx(i), ny(i));
+            Dm(i, j) = orbital->evaluate(rNew.row(j + N), nx(i), ny(i));
         }
     }
-    Dp_new = Dp;
-    Dm_new = Dm;
+    rOld = rNew;
+    DpNew = Dp;
+    DmNew = Dm;
 
     // Calulating the inverse using Armadillo.
-    //Dp_inv = inv(Dp).t();
-    //Dm_inv = inv(Dm).t();
-    Dp_inv = inv(Dp);
-    Dm_inv = inv(Dm);
+    DpInv = inv(Dp);
+    DmInv = inv(Dm);
 
-    Dp_inv_new = Dp_inv;
-    Dm_inv_new = Dm_inv;
+    DpInvNew = DpInv;
+    DmInvNew = DmInv;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 double Slater::getRatio() {
     double R = 0;
     int i = activeParticle;
 
     if (i < N) { // Spin up
         for (int j = 0; j < N; j++) {
-            R += Dp_new(j, i) * Dp_inv(j, i);
+            R += DpNew(j, i) * DpInv(j, i);
         }
     } else {
         for (int j = 0; j < N; j++) {
-            R += Dm_new(j, i - N) * Dm_inv(j, i - N);
+            R += DmNew(j, i - N) * DmInv(j, i - N);
         }
     }
     return R;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 void Slater::updateInverse() {
 
     int i = activeParticle;
-    Dp_inv_new = Dp_inv;
-    Dm_inv = Dm_inv_new;
+    DpInvNew = DpInv;
+    DmInv = DmInvNew;
 
     double S;
     // TMP solution for the inverse.
@@ -100,76 +104,79 @@ void Slater::updateInverse() {
             if (j != i) {
                 S = 0;
                 for (int l = 0; l < N; l++)
-                    S += Dp_new(l, i) * Dp_inv(l, j);
+                    S += DpNew(l, i) * DpInv(l, j);
             }
             for (int l = 0; l < N; l++)
-                Dp_inv_new(l, j) = Dp_inv(l, j) - (Dp_inv(l, i) / R) * S;
+                DpInvNew(l, j) = DpInv(l, j) - (DpInv(l, i) / R) * S;
         }
         for (int l = 0; l < N; l++)
-            Dp_inv_new(l, i) = Dp_inv(l, i) / R;
+            DpInvNew(l, i) = DpInv(l, i) / R;
     } else { // Spin down
         for (int j = 0; j < N; j++) {
             if (j != i - N) {
                 S = 0;
                 for (int l = 0; l < N; l++)
-                    S += Dm_new(l, i - N) * Dm_inv(l, j);
+                    S += DmNew(l, i - N) * DmInv(l, j);
             }
             for (int l = 0; l < N; l++)
-                Dm_inv_new(l, j) = Dm_inv(l, j) - (Dm_inv(l, i - N) / R) * S;
+                DmInvNew(l, j) = DmInv(l, j) - (DmInv(l, i - N) / R) * S;
         }
         for (int l = 0; l < N; l++)
-            Dm_inv_new(l, i - N) = Dm_inv(l, i - N) / R;
+            DmInvNew(l, i - N) = DmInv(l, i - N) / R;
     }
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 void Slater::setPosition(const mat & r, int active_particle) {
     this->activeParticle = active_particle;
-    r_new = r;
+    rNew = r;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 void Slater::updateMatrix() {
     if (activeParticle < N) {
         for (int i = 0; i < N; i++) {
-            Dp_new(i, activeParticle) = orbital->evaluate(r_new.row(activeParticle), nx(i), ny(i));
+            DpNew(i, activeParticle) = orbital->evaluate(rNew.row(activeParticle), nx(i), ny(i));
         }
     } else {
         for (int i = 0; i < N; i++) {
-            Dm_new(i, activeParticle - N) = orbital->evaluate(r_new.row(activeParticle), nx(i), ny(i));
+            DmNew(i, activeParticle - N) = orbital->evaluate(rNew.row(activeParticle), nx(i), ny(i));
         }
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 void Slater::acceptNewPosition() {
 
     if (activeParticle < N) {
         for (int i = 0; i < N; i++)
-            Dp(i, activeParticle) = Dp_new(i, activeParticle);
-        Dp_inv = Dp_inv_new;
+            Dp(i, activeParticle) = DpNew(i, activeParticle);
+        DpInv = DpInvNew;
     } else {
         for (int i = 0; i < N; i++)
-            Dm(i, activeParticle - N) = Dm_new(i, activeParticle - N);
-        Dm_inv = Dm_inv_new;
+            Dm(i, activeParticle - N) = DmNew(i, activeParticle - N);
+        DmInv = DmInvNew;
     }
 
-    // Should be updated more efficiently.
-    r_old = r_new;
+    rOld = rNew;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 double Slater::getLaplacian(int i) {
 
     double sum = 0;
     if (i < N) {
         for (int j = 0; j < N; j++) { // Spin up.
-            sum += orbital->evaluateLaplacian(r_new.row(i), nx(j), ny(j)) * Dp_inv(j, i);
+            sum += orbital->evaluateLaplacian(rNew.row(i), nx(j), ny(j)) * DpInv(j, i);
         }
     } else {
         for (int j = 0; j < N; j++) { // Spin down.
-            sum += orbital->evaluateLaplacian(r_new.row(i), nx(j), ny(j)) * Dm_inv(j, i - N);
+            sum += orbital->evaluateLaplacian(rNew.row(i), nx(j), ny(j)) * DmInv(j, i - N);
         }
     }
 
@@ -177,21 +184,23 @@ double Slater::getLaplacian(int i) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 void Slater::computeGradient(int i) {
     gradient = zeros(1, dim);
 
     if (i < N) {
         for (int j = 0; j < N; j++) { // Spin up.
-            gradient += orbital->getGradient(r_new.row(i), nx(j), ny(j)) * Dp_inv(j, i);
+            gradient += orbital->getGradient(rNew.row(i), nx(j), ny(j)) * DpInv(j, i);
         }
     } else {
         for (int j = 0; j < N; j++) { // Spin down.
-            gradient += orbital->getGradient(r_new.row(i), nx(j), ny(j)) * Dm_inv(j, i - N);
+            gradient += orbital->getGradient(rNew.row(i), nx(j), ny(j)) * DmInv(j, i - N);
         }
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 double Slater::evaluate(const mat &r) {
     mat D_p = zeros(N, N);
     mat D_m = zeros(N, N);
@@ -207,14 +216,15 @@ double Slater::evaluate(const mat &r) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 double Slater::getVariationalGradient() {
     double gradient = 0;
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
-            gradient += Dp_inv(j, i) * orbital->variationalDerivative(r_new.row(i), nx(j), ny(j));
-            gradient += Dm_inv(j, i) * orbital->variationalDerivative(r_new.row(i + N), nx(j), ny(j));
+            gradient += DpInv(j, i) * orbital->variationalDerivative(rNew.row(i), nx(j), ny(j));
+            gradient += DmInv(j, i) * orbital->variationalDerivative(rNew.row(i + N), nx(j), ny(j));
         }
     }
-    
+
     return gradient;
 }

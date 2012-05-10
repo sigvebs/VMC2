@@ -36,27 +36,21 @@ public:
     double getVariationalGradient();
 private:
     Orbital *orbital;
-    mat r_new;
-    mat r_old;
+    mat rNew;
+    mat rOld;
 
     mat Dp;
     mat Dm;
-    mat Dp_new;
-    mat Dm_new;
-    mat Dp_inv;
-    mat Dm_inv;
-    mat Dp_inv_new;
-    mat Dm_inv_new;
+    mat DpNew;
+    mat DmNew;
+    mat DpInv;
+    mat DmInv;
+    mat DpInvNew;
+    mat DmInvNew;
 
     ivec nx;
     ivec ny;
 
-    /*
-    mat D; 
-    mat DNew;
-    mat DInv; 
-    mat DInvNew; 
-     */
     int dim;
     int N;
     int nParticles;

@@ -35,17 +35,7 @@ QDJastrow::QDJastrow(int dim, int nParticles, double beta) : Jastrow(dim, nParti
             else
                 a(i, j) = 1.0 / 3.0;
         }
-    }
-    
-#if 0
-    cout
-            << "\t dim = " << this->dim 
-            << "\t nParticles = " << this->nParticles 
-            << "\t beta = " << this->beta
-            << "\t a= " << a
-            << endl;
-#endif
-     
+    }     
 }
 
 ////////////////////////////////////////////////////////////////////////////////
