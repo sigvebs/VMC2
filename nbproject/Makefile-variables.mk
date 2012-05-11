@@ -14,6 +14,14 @@ CND_ARTIFACT_PATH_Debug=dist/Debug/GNU-Linux-x86/vmc2
 CND_PACKAGE_DIR_Debug=dist/Debug/GNU-Linux-x86/package
 CND_PACKAGE_NAME_Debug=vmc2.tar
 CND_PACKAGE_PATH_Debug=dist/Debug/GNU-Linux-x86/package/vmc2.tar
+# DebugHjemme configuration
+CND_PLATFORM_DebugHjemme=GNU-Linux-x86
+CND_ARTIFACT_DIR_DebugHjemme=dist/DebugHjemme/GNU-Linux-x86
+CND_ARTIFACT_NAME_DebugHjemme=vmc2
+CND_ARTIFACT_PATH_DebugHjemme=dist/DebugHjemme/GNU-Linux-x86/vmc2
+CND_PACKAGE_DIR_DebugHjemme=dist/DebugHjemme/GNU-Linux-x86/package
+CND_PACKAGE_NAME_DebugHjemme=vmc2.tar
+CND_PACKAGE_PATH_DebugHjemme=dist/DebugHjemme/GNU-Linux-x86/package/vmc2.tar
 # Release configuration
 CND_PLATFORM_Release=GNU-Linux-x86
 CND_ARTIFACT_DIR_Release=dist/Release/GNU-Linux-x86

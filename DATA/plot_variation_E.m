@@ -6,7 +6,7 @@ addpath('C:\Users\zigg\Dropbox\Matlab\myaa')
 addpath('M:\Dropbox\Matlab\myaa')
 addpath('/mn/felt/u9/sigve/Dropbox/Matlab/myaa')
 
-% Importing data
+%% Importing data
 imported_data = importdata('VMC_prf.dat'); 
 %%
 % Storing imported data in the right structures.
@@ -34,7 +34,7 @@ end;
 clc
 fig =  figure('Color',[1 1 1]);
 logoax = axes('Visible','on', 'parent', fig,  'fontsize', 12);
-pl = contourf(alpha, beta, E, 10, 'DisplayName','E');
+pl = contourf(alpha, beta, E, 100, 'DisplayName','E');
 
 % Making it pretty
 colormap('winter');

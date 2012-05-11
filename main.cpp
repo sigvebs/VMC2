@@ -10,6 +10,7 @@
 #include "includes/ini.h"
 #include "ComputeOneWF.h"
 #include "ComputeGrid.h"
+#include "SGD.h"
 
 using namespace std;
 
@@ -41,6 +42,9 @@ int main(int argc, char** argv) {
             break;
         case 1:
             new ComputeGrid();
+            break;
+        case 3:
+            new SGD();
             break;
     }
 

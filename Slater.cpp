@@ -221,8 +221,10 @@ double Slater::getVariationalGradient() {
     double gradient = 0;
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
-            gradient += DpInv(j, i) * orbital->variationalDerivative(rNew.row(i), nx(j), ny(j));
-            gradient += DmInv(j, i) * orbital->variationalDerivative(rNew.row(i + N), nx(j), ny(j));
+//            gradient += DpInv(j, i) * orbital->variationalDerivative(rNew.row(i), nx(j), ny(j));
+//            gradient += DmInv(j, i) * orbital->variationalDerivative(rNew.row(i + N), nx(j), ny(j));
+            gradient += DpInv(i,j) * orbital->variationalDerivative(rNew.row(j), nx(i), ny(i));
+            gradient += DmInv(i,j) * orbital->variationalDerivative(rNew.row(j + N), nx(i), ny(i));
         }
     }
 

@@ -35,12 +35,13 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 # Object Files
 OBJECTFILES= \
 	${OBJECTDIR}/QD/QDJastrow.o \
+	${OBJECTDIR}/includes/zigrandom.o \
 	${OBJECTDIR}/main.o \
 	${OBJECTDIR}/QD/QDOrbital.o \
-	${OBJECTDIR}/includes/zigrandom.o \
 	${OBJECTDIR}/Slater.o \
 	${OBJECTDIR}/Hamiltonian.o \
 	${OBJECTDIR}/includes/lib.o \
+	${OBJECTDIR}/SGD.o \
 	${OBJECTDIR}/includes/zignor.o \
 	${OBJECTDIR}/QD/QDHamiltonian.o \
 	${OBJECTDIR}/Hermite.o \
@@ -82,6 +83,11 @@ ${OBJECTDIR}/QD/QDJastrow.o: QD/QDJastrow.cpp
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/QD/QDJastrow.o QD/QDJastrow.cpp
 
+${OBJECTDIR}/includes/zigrandom.o: includes/zigrandom.c 
+	${MKDIR} -p ${OBJECTDIR}/includes
+	${RM} $@.d
+	$(COMPILE.c) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/includes/zigrandom.o includes/zigrandom.c
+
 ${OBJECTDIR}/main.o: main.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
@@ -91,11 +97,6 @@ ${OBJECTDIR}/QD/QDOrbital.o: QD/QDOrbital.cpp
 	${MKDIR} -p ${OBJECTDIR}/QD
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/QD/QDOrbital.o QD/QDOrbital.cpp
-
-${OBJECTDIR}/includes/zigrandom.o: includes/zigrandom.c 
-	${MKDIR} -p ${OBJECTDIR}/includes
-	${RM} $@.d
-	$(COMPILE.c) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/includes/zigrandom.o includes/zigrandom.c
 
 ${OBJECTDIR}/Slater.o: Slater.cpp 
 	${MKDIR} -p ${OBJECTDIR}
@@ -111,6 +112,11 @@ ${OBJECTDIR}/includes/lib.o: includes/lib.cpp
 	${MKDIR} -p ${OBJECTDIR}/includes
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/includes/lib.o includes/lib.cpp
+
+${OBJECTDIR}/SGD.o: SGD.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/SGD.o SGD.cpp
 
 ${OBJECTDIR}/includes/zignor.o: includes/zignor.c 
 	${MKDIR} -p ${OBJECTDIR}/includes

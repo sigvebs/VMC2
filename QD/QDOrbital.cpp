@@ -32,8 +32,8 @@ QDOrbital::QDOrbital(int dim, double alpha, double w) : w(w), Orbital(dim, alpha
 
 #if 0 
     cout
-            << "\talpha = " << alpha 
-            << "\t w = " << w 
+            << "\talpha = " << alpha
+            << "\t w = " << w
             << "\t sqrtWAlpha = " << sqrtWAlpha
             << "\t wAlpha = " << wAlpha
             << "\t sqrtW = " << sqrtW
@@ -107,9 +107,8 @@ rowvec QDOrbital::getGradient(const rowvec &r, const int nx, const int ny) {
 ////////////////////////////////////////////////////////////////////////////////
 
 double QDOrbital::variationalDerivative(const rowvec &r, const int nx, const int ny) {
-    double derivative, exp_part;
+    double derivative;
     double r_sq = dot(r, r);
-    exp_part = exp(-0.5 * wAlpha * r_sq);
 
     double Hx = H->polynomial(nx, sqrtWAlpha * r(0));
     double Hy = H->polynomial(ny, sqrtWAlpha * r(1));
@@ -128,10 +127,9 @@ double QDOrbital::variationalDerivative(const rowvec &r, const int nx, const int
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void QDOrbital::setNewAlpha(double alpha) {
-    this->alpha = alpha;
-    sqrtWAlpha = sqrt(w * alpha);
-    wAlpha = w*alpha;
-    sqrtW = sqrt(w);
-    sqrtWDividedAlpha = sqrt(w / alpha);
+void QDOrbital::setNewAlpha(double newAlpha) {
+    alpha = newAlpha;
+    sqrtWAlpha = sqrt(w * newAlpha);
+    wAlpha = w*newAlpha;
+    sqrtWDividedAlpha = sqrt(w / newAlpha);
 };

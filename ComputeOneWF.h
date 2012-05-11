@@ -16,7 +16,7 @@ public:
 private:
     double E;
     double Esq;
-    double accepted;    
+    double accepted;
     
     int McSamples;
     bool importanceSampling;

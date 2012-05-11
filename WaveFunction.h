@@ -34,6 +34,8 @@ public:
     void acceptMove();
     void calculateEnergy();
     void initSlater();
+    rowvec getVariationGradient();
+    void setNewVariationalParameters(double, double);
     
     // Brute force
     bool tryNewPositionBF(int);
@@ -53,6 +55,7 @@ private:
     
     Jastrow *jastrow;
     Slater *slater;
+    Orbital *orbital;
     Hamiltonian *hamiltonian;
 
     double E;

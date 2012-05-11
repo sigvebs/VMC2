@@ -9,10 +9,17 @@
             <header-extensions>h,hpp</header-extensions>
             <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects/>
-            <sourceRootList/>
+            <sourceRootList>
+                <sourceRootElem>Includes</sourceRootElem>
+                <sourceRootElem>includes</sourceRootElem>
+            </sourceRootList>
             <confList>
                 <confElem>
                     <name>Debug</name>
+                    <type>1</type>
+                </confElem>
+                <confElem>
+                    <name>DebugHjemme</name>
                     <type>1</type>
                 </confElem>
                 <confElem>

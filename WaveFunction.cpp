@@ -9,7 +9,6 @@
 #include "includes/lib.h"
 
 #include "includes/ziggurat.hpp"
-//#include "includes/ziggurat.cpp"
 #include "includes/zignor.h"
 #include "includes/zignor.c"
 #include "includes/zigrandom.h"
@@ -23,7 +22,7 @@ WaveFunction::WaveFunction() {
 ////////////////////////////////////////////////////////////////////////////////
 
 WaveFunction::WaveFunction(int dim, int nParticles, long idum, Orbital *orbital, Jastrow *jastrow, Hamiltonian *hamiltonian)
-: dim(dim), nParticles(nParticles), idum(idum), jastrow(jastrow), hamiltonian(hamiltonian) {
+: dim(dim), nParticles(nParticles), idum(idum), orbital(orbital), jastrow(jastrow), hamiltonian(hamiltonian) {
 
     int dum = (int) idum;
     RanNormalSetSeedZigVec(&dum, 200);
@@ -189,7 +188,6 @@ double WaveFunction::WFRatio() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// CHECK
 
 mat WaveFunction::newQForce() {
     mat q_f = zeros(nParticles, dim);
@@ -216,7 +214,6 @@ mat WaveFunction::newQForce() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// CHECK
 
 void WaveFunction::calculateEnergy() {
     double EKin = 0;
@@ -248,6 +245,33 @@ void WaveFunction::calculateEnergy() {
     E = EKin + EPot;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+rowvec WaveFunction::getVariationGradient() {
+    rowvec varGradient = zeros(1, 2);
+
+    // Gradient_slater;
+    varGradient(0) = slater->getVariationalGradient();
+
+    // Gradient Jastrow.
+    if (usingJastrow)
+        varGradient(1) = jastrow->getVariationalGradient(rOld);
+
+    return varGradient;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void WaveFunction::setNewVariationalParameters(double alpha, double beta) {
+    orbital->setNewAlpha(alpha);
+    jastrow->setNewBeta(beta);
+    slater->setPosition(rOld, 0);
+    slater->init();
+
+    // One loop over all particles to adjust the system.
+    for (int i = 0; i < nParticles; i++)
+        tryNewPosition(i);
+}
 ////////////////////////////////////////////////////////////////////////////////
 
 void WaveFunction::setOptimalStepLength() {

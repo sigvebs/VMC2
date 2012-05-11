@@ -8,18 +8,22 @@
 #include "QDJastrow.h"
 
 ////////////////////////////////////////////////////////////////////////////////
+
 QDJastrow::QDJastrow() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 QDJastrow::QDJastrow(const QDJastrow& orig) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 QDJastrow::~QDJastrow() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 QDJastrow::QDJastrow(int dim, int nParticles, double beta) : Jastrow(dim, nParticles, beta) {
 
     // Initiating a matrix with all the spin dependant a-values.
@@ -35,10 +39,11 @@ QDJastrow::QDJastrow(int dim, int nParticles, double beta) : Jastrow(dim, nParti
             else
                 a(i, j) = 1.0 / 3.0;
         }
-    }     
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 double QDJastrow::evaluate(const mat &r) {
     double r_norm;
     double value = 0;
@@ -61,6 +66,7 @@ double QDJastrow::evaluate(const mat &r) {
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
 double QDJastrow::getLaplacian(const mat &r, int i) {
     double r_ki;
     double sum = 0;
@@ -82,6 +88,7 @@ double QDJastrow::getLaplacian(const mat &r, int i) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 void QDJastrow::computeGradient(const mat &r, int i) {
     double r_ki;
     gradient = zeros(1, dim);
@@ -100,6 +107,7 @@ void QDJastrow::computeGradient(const mat &r, int i) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
 double QDJastrow::getVariationalGradient(const mat &r) {
     double r_sq, r_norm;
     double value = 1;
@@ -115,6 +123,6 @@ double QDJastrow::getVariationalGradient(const mat &r) {
             value += a(i, j) * r_sq / ((1 + beta * r_norm)*(1 + beta * r_norm));
         }
     }
-    
+
     return -value;
 }
