@@ -65,7 +65,7 @@ WaveFunction::~WaveFunction() {
 
 double WaveFunction::evaluate(const mat &r) {
     double psi;
-
+    
     psi = slater->evaluate(r);
 
     // Adding the Jastrow part

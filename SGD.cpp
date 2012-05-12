@@ -58,7 +58,6 @@ SGD::SGD() {
         A = INIreader.GetDouble("SGD", "A");
         a = INIreader.GetDouble("SGD", "a");
         maxStep = INIreader.GetDouble("SGD", "maxStep");
-
     }
 
     //--------------------------------------------------------------------------
@@ -217,7 +216,7 @@ SGD::SGD() {
         }
 
         //----------------------------------------------------------------------
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 2; i++) {
             if (gradient(i) * gradientOld(i) < 0)
                 nVar(i)++;
 

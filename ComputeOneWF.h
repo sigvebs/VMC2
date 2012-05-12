@@ -25,6 +25,8 @@ private:
     double alpha, beta, w;
     bool usingJastrow;
     int dim;
+    
+    bool blocking;
 };
 
 #endif	/* COMPUTEONEWF_H */

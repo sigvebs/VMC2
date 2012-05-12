@@ -35,14 +35,16 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 # Object Files
 OBJECTFILES= \
 	${OBJECTDIR}/QD/QDJastrow.o \
-	${OBJECTDIR}/includes/zigrandom.o \
 	${OBJECTDIR}/main.o \
 	${OBJECTDIR}/QD/QDOrbital.o \
+	${OBJECTDIR}/includes/zigrandom.o \
+	${OBJECTDIR}/OneBodyDensity.o \
 	${OBJECTDIR}/Slater.o \
 	${OBJECTDIR}/Hamiltonian.o \
 	${OBJECTDIR}/includes/lib.o \
 	${OBJECTDIR}/SGD.o \
 	${OBJECTDIR}/includes/zignor.o \
+	${OBJECTDIR}/Blocking.o \
 	${OBJECTDIR}/QD/QDHamiltonian.o \
 	${OBJECTDIR}/Hermite.o \
 	${OBJECTDIR}/Jastrow.o \
@@ -83,11 +85,6 @@ ${OBJECTDIR}/QD/QDJastrow.o: QD/QDJastrow.cpp
 	${RM} $@.d
 	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/QD/QDJastrow.o QD/QDJastrow.cpp
 
-${OBJECTDIR}/includes/zigrandom.o: includes/zigrandom.c 
-	${MKDIR} -p ${OBJECTDIR}/includes
-	${RM} $@.d
-	$(COMPILE.c) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/includes/zigrandom.o includes/zigrandom.c
-
 ${OBJECTDIR}/main.o: main.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
@@ -97,6 +94,16 @@ ${OBJECTDIR}/QD/QDOrbital.o: QD/QDOrbital.cpp
 	${MKDIR} -p ${OBJECTDIR}/QD
 	${RM} $@.d
 	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/QD/QDOrbital.o QD/QDOrbital.cpp
+
+${OBJECTDIR}/includes/zigrandom.o: includes/zigrandom.c 
+	${MKDIR} -p ${OBJECTDIR}/includes
+	${RM} $@.d
+	$(COMPILE.c) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/includes/zigrandom.o includes/zigrandom.c
+
+${OBJECTDIR}/OneBodyDensity.o: OneBodyDensity.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/OneBodyDensity.o OneBodyDensity.cpp
 
 ${OBJECTDIR}/Slater.o: Slater.cpp 
 	${MKDIR} -p ${OBJECTDIR}
@@ -122,6 +129,11 @@ ${OBJECTDIR}/includes/zignor.o: includes/zignor.c
 	${MKDIR} -p ${OBJECTDIR}/includes
 	${RM} $@.d
 	$(COMPILE.c) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/includes/zignor.o includes/zignor.c
+
+${OBJECTDIR}/Blocking.o: Blocking.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -g -MMD -MP -MF $@.d -o ${OBJECTDIR}/Blocking.o Blocking.cpp
 
 ${OBJECTDIR}/QD/QDHamiltonian.o: QD/QDHamiltonian.cpp 
 	${MKDIR} -p ${OBJECTDIR}/QD

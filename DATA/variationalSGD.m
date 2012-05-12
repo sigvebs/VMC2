@@ -9,7 +9,7 @@ addpath('/mn/felt/u9/sigve/Dropbox/Matlab/myaa')
 % Importing data
 imported_data = importdata('VMC_SGD.dat'); 
 
-thermal = 600;
+thermal = 200;
 alpha = imported_data(:,1);
 beta = imported_data(:,2);
 

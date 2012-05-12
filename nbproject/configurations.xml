@@ -32,6 +32,8 @@
         <itemPath>QD/QDOrbital.cpp</itemPath>
         <itemPath>QD/QDOrbital.h</itemPath>
       </logicalFolder>
+      <itemPath>Blocking.cpp</itemPath>
+      <itemPath>Blocking.h</itemPath>
       <itemPath>ComputeGrid.cpp</itemPath>
       <itemPath>ComputeGrid.h</itemPath>
       <itemPath>ComputeOneWF.cpp</itemPath>
@@ -42,6 +44,8 @@
       <itemPath>Hermite.h</itemPath>
       <itemPath>Jastrow.cpp</itemPath>
       <itemPath>Jastrow.h</itemPath>
+      <itemPath>OneBodyDensity.cpp</itemPath>
+      <itemPath>OneBodyDensity.h</itemPath>
       <itemPath>Orbital.cpp</itemPath>
       <itemPath>Orbital.h</itemPath>
       <itemPath>QD.ini</itemPath>
