@@ -1,2 +1,6 @@
 /dist/Debug/
 /build/DebugHjemme/
+/build/Profiler/
+/build/ReleaseHjemme/
+/dist/ReleaseHjemme/
+/build/Release/

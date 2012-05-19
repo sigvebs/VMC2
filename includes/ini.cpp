@@ -37,10 +37,9 @@ With the understanding that:
  *           It is easy to use, stable and secure
  
 
-ToDo:
-- TODO: make comments more flexibel eg:
+- : make comments more flexibel eg:
        whitespace whitespace ;
-- TODO: the set and get functions should be splitted into some base functions like findSectionID, ..
+- : the set and get functions should be splitted into some base functions like findSectionID, ..
 	   instead of writing the code again and again
 	   
 */

@@ -22,7 +22,7 @@ AS=as
 
 # Macros
 CND_PLATFORM=GNU-Linux-x86
-CND_CONF=DebugHjemme
+CND_CONF=Profiler
 CND_DISTDIR=dist
 CND_BUILDDIR=build
 
@@ -61,8 +61,8 @@ OBJECTFILES= \
 CFLAGS=
 
 # CC Compiler Flags
-CCFLAGS=-O3 -DMPICH_IGNORE_CXX_SEEK -llapack -lblas -larmadillo
-CXXFLAGS=-O3 -DMPICH_IGNORE_CXX_SEEK -llapack -lblas -larmadillo
+CCFLAGS=-pg -O3 -DMPICH_IGNORE_CXX_SEEK -llapack -lblas -larmadillo
+CXXFLAGS=-pg -O3 -DMPICH_IGNORE_CXX_SEEK -llapack -lblas -larmadillo
 
 # Fortran Compiler Flags
 FFLAGS=
@@ -89,7 +89,7 @@ ${OBJECTDIR}/QD/QDJastrow.o: QD/QDJastrow.cpp
 ${OBJECTDIR}/includes/zigrandom.o: includes/zigrandom.c 
 	${MKDIR} -p ${OBJECTDIR}/includes
 	${RM} $@.d
-	$(COMPILE.c) -g -I. -I. -I. -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/includes/zigrandom.o includes/zigrandom.c
+	$(COMPILE.c) -g -I. -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/includes/zigrandom.o includes/zigrandom.c
 
 ${OBJECTDIR}/main.o: main.cpp 
 	${MKDIR} -p ${OBJECTDIR}
@@ -134,7 +134,7 @@ ${OBJECTDIR}/DMC.o: DMC.cpp
 ${OBJECTDIR}/includes/zignor.o: includes/zignor.c 
 	${MKDIR} -p ${OBJECTDIR}/includes
 	${RM} $@.d
-	$(COMPILE.c) -g -I. -I. -I. -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/includes/zignor.o includes/zignor.c
+	$(COMPILE.c) -g -I. -I. -MMD -MP -MF $@.d -o ${OBJECTDIR}/includes/zignor.o includes/zignor.c
 
 ${OBJECTDIR}/Blocking.o: Blocking.cpp 
 	${MKDIR} -p ${OBJECTDIR}

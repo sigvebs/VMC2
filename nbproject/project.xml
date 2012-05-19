@@ -10,7 +10,6 @@
             <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects/>
             <sourceRootList>
-                <sourceRootElem>Includes</sourceRootElem>
                 <sourceRootElem>includes</sourceRootElem>
             </sourceRootList>
             <confList>
@@ -19,11 +18,23 @@
                     <type>1</type>
                 </confElem>
                 <confElem>
+                    <name>Debug4nodes</name>
+                    <type>1</type>
+                </confElem>
+                <confElem>
                     <name>DebugHjemme</name>
                     <type>1</type>
                 </confElem>
                 <confElem>
+                    <name>ReleaseHjemme</name>
+                    <type>1</type>
+                </confElem>
+                <confElem>
                     <name>Release</name>
+                    <type>1</type>
+                </confElem>
+                <confElem>
+                    <name>Profiler</name>
                     <type>1</type>
                 </confElem>
             </confList>

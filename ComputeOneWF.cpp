@@ -81,7 +81,7 @@ ComputeOneWF::ComputeOneWF() {
     MPI_Bcast(&nParticles, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&usingJastrow, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&blocking, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        
+
     //--------------------------------------------------------------------------
     // Configuring the wave function.    
     if (myRank == 0)
@@ -117,14 +117,15 @@ ComputeOneWF::ComputeOneWF() {
     accepted = 0;
     E = 0;
     Esq = 0;
-
     for (int i = 0; i < McSamples + thermalization; i++) {
         for (int j = 0; j < nParticles; j++) {
-            if (importanceSampling)
+            
+            if (importanceSampling) {
                 accepted_tmp = wf.tryNewPosition(j);
-            else
+            } else {
                 accepted_tmp = wf.tryNewPositionBF(j);
-
+            }
+            
             if (i > thermalization) {
                 localE = wf.sampleEnergy();
                 E += localE;

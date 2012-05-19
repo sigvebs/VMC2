@@ -29,7 +29,7 @@ QDOrbital::QDOrbital(int dim, double alpha, double w) : w(w), Orbital(dim, alpha
     wAlpha = w*alpha;
     sqrtW = sqrt(w);
     sqrtWDividedAlpha = sqrt(w / alpha);
-
+    gradient = zeros(1, dim);
 #if 0 
     cout
             << "\talpha = " << alpha
@@ -86,7 +86,9 @@ double QDOrbital::evaluateLaplacian(const rowvec &r, const int nx, const int ny)
 ////////////////////////////////////////////////////////////////////////////////
 
 rowvec QDOrbital::getGradient(const rowvec &r, const int nx, const int ny) {
-    rowvec gradient = zeros(1, dim);
+    for (int i = 0; i < dim; i++) {
+        gradient(i) = 0;
+    }
 
     double Hx = H->polynomial(nx, sqrtWAlpha * r(0));
     double Hy = H->polynomial(ny, sqrtWAlpha * r(1));

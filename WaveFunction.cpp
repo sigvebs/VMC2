@@ -23,7 +23,6 @@ WaveFunction::WaveFunction() {
 
 WaveFunction::WaveFunction(int dim, int nParticles, long idum, Orbital *orbital, Jastrow *jastrow, Hamiltonian *hamiltonian)
 : dim(dim), nParticles(nParticles), idum(idum), orbital(orbital), jastrow(jastrow), hamiltonian(hamiltonian) {
-
     int dum = (int) idum;
     RanNormalSetSeedZigVec(&dum, 200);
 
@@ -37,13 +36,15 @@ WaveFunction::WaveFunction(int dim, int nParticles, long idum, Orbital *orbital,
         usingJastrow = false;
 
     // Initializing positions
-    dt = 0.03;
+    dt = 0.0005;
     sqrtDt = sqrt(dt);
     D = 0.5;
-    rOld = randn(nParticles, dim) * sqrtDt;
+
+    rOld = randu(nParticles, dim);
     rNew = rOld;
     slater->setPosition(rNew, 0);
     slater->init();
+    slater->acceptPosition();
     qForce = newQForce();
     qForceOld = qForce;
 }
@@ -51,13 +52,37 @@ WaveFunction::WaveFunction(int dim, int nParticles, long idum, Orbital *orbital,
 ////////////////////////////////////////////////////////////////////////////////
 
 WaveFunction::WaveFunction(const WaveFunction& orig) {
+    usingJastrow = orig.usingJastrow;
+    activeParticle = orig.activeParticle;
+    idum = orig.idum;
+
+    rOld = orig.rOld;
+    rNew = orig.rNew;
+
+    qForce = orig.qForce;
+    qForceOld = orig.qForceOld;
+
+    jastrow = orig.jastrow;
+    slater = orig.slater->clone();
+    orbital = orig.orbital;
+    hamiltonian = orig.hamiltonian;
+
+    E = orig.E;
+    dim = orig.dim;
+    nParticles = orig.nParticles;
+
+    dt = orig.dt;
+    sqrtDt = orig.sqrtDt;
+    D = orig.D;
+
+    int dum = (int) idum;
+    RanNormalSetSeedZigVec(&dum, 200);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 WaveFunction::~WaveFunction() {
     delete slater;
-    delete hamiltonian;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,7 +90,7 @@ WaveFunction::~WaveFunction() {
 
 double WaveFunction::evaluate(const mat &r) {
     double psi;
-    
+
     psi = slater->evaluate(r);
 
     // Adding the Jastrow part
@@ -79,7 +104,6 @@ double WaveFunction::evaluate(const mat &r) {
 
 bool WaveFunction::tryNewPositionBF(int activeParticle) {
 
-
     this->activeParticle = activeParticle;
     bool accepted = false;
 
@@ -91,6 +115,7 @@ bool WaveFunction::tryNewPositionBF(int activeParticle) {
     slater->setPosition(rNew, activeParticle);
     slater->updateMatrix();
 
+
     //--------------------------------------------------------------------------
     // Metropolis acceptance test.
     double R = WFRatio();
@@ -100,11 +125,13 @@ bool WaveFunction::tryNewPositionBF(int activeParticle) {
         accepted = true;
         rOld = rNew;
         slater->updateInverse();
-        slater->acceptNewPosition();
+        slater->acceptPosition();
         calculateEnergy();
     } else {
-        // If the move is not accepted the position and quantum force is reset.
-        rNew = rOld;
+        // If the move is not accepted the position is reset.
+        slater->rejectPosition();
+        for (int d = 0; d < dim; d++)
+            rNew(activeParticle, d) = rOld(activeParticle, d);
     }
     //--------------------------------------------------------------------------
     return accepted;
@@ -113,60 +140,53 @@ bool WaveFunction::tryNewPositionBF(int activeParticle) {
 ////////////////////////////////////////////////////////////////////////////////
 
 bool WaveFunction::tryNewPosition(int active) {
-#if 0
-    cout
-            << "\t dt = " << dt
-            << "\t sqrtdt = " << sqrtDt
-            << "\t D = " << D
-            << endl;
-#endif
-    activeParticle = active;
+    this->activeParticle = active;
     bool accepted = false;
 
-    // Using the quantum force to calculate a new position.
+    // Calculating new trial position.
     for (int i = 0; i < dim; i++)
         rNew(activeParticle, i) = rOld(activeParticle, i) + D * qForceOld(activeParticle, i) * dt + DRanNormalZigVec() * sqrtDt;
 
     // Updating Slater
     slater->setPosition(rNew, activeParticle);
     slater->updateMatrix();
+    slater->updateInverse();
 
     // Updating the quantum force.
     qForce = newQForce();
 
     //--------------------------------------------------------------------------
     // Calculating the ratio between the Green's functions.     
-    double greens_function = 0;
+    double greensFunction = 0;
 
     for (int i = 0; i < nParticles; i++) {
         for (int j = 0; j < dim; j++) {
-            greens_function +=
+            greensFunction +=
                     (qForceOld(i, j) + qForce(i, j)) *
                     (D * dt * 0.5 * (qForceOld(i, j) - qForce(i, j)) - rNew(i, j) + rOld(i, j));
         }
     }
 
-    greens_function = exp(0.5 * greens_function);
+    greensFunction = exp(0.5 * greensFunction);
 
     //--------------------------------------------------------------------------
     // Metropolis-Hastings acceptance test.
     double R = WFRatio();
-    R = R * R *greens_function;
+    R = R * R * greensFunction;
 
     if (ran3(&idum) <= R) {
         accepted = true;
         rOld = rNew;
         qForceOld = qForce;
-        slater->updateInverse();
-        slater->acceptNewPosition();
+        slater->acceptPosition();
         calculateEnergy();
     } else {
-        // If the move is not accepted the position and quantum force is reset.
-        rNew = rOld;
+        // If the move is not accepted the position is reset.
         qForce = qForceOld;
+        slater->rejectPosition();
+        rNew = rOld;
     }
     //--------------------------------------------------------------------------
-
     return accepted;
 }
 
@@ -193,13 +213,21 @@ mat WaveFunction::newQForce() {
     mat q_f = zeros(nParticles, dim);
     rowvec gradientSlater;
     rowvec gradientJastrow = zeros(1, dim);
-    double R = slater->getRatio();
+    //double R = slater->getRatio();
 
+#define ANALYTICAL_GRADIENT 1
+#define NUMERICAL_GRADIENT 0
+
+#if ANALYTICAL_GRADIENT
+
+    //double errorThreshold = 1e-2;
+    //rowvec gradientSlaterNum;
     for (int i = 0; i < nParticles; i++) {
 
         // Orbitals' gradient.
         slater->computeGradient(i);
         gradientSlater = slater->getGradient();
+        //gradientSlaterNum = slater->getGradientNumerical(i);
 
         // Jastrow's gradient.
         if (usingJastrow) {
@@ -207,17 +235,111 @@ mat WaveFunction::newQForce() {
             gradientJastrow = jastrow->getGradient();
         }
 
-        q_f.row(i) = 2.0 * (gradientJastrow + gradientSlater / R);
+        /*
+        if (max(max(gradientSlater - gradientSlaterNum)) > errorThreshold)
+            cout
+                << " Active particle = " << activeParticle
+                << " i = " << i << endl
+                << gradientSlater - gradientSlaterNum << endl;
+         */
+        q_f.row(i) = 2.0 * (gradientJastrow + gradientSlater);
+        //q_f.row(i) = 2.0 * (gradientJastrow + gradientSlaterNum);
     }
+
+#endif
+
+#if NUMERICAL_GRADIENT
+#if DEBUG_QFORCE
+    mat slaterNum = zeros(nParticles, dim);
+    mat jastrowNum = zeros(nParticles, dim);
+#endif
+    mat slaterNum = zeros(nParticles, dim);
+    mat jastrowNum = zeros(nParticles, dim);
+    q_f = zeros(nParticles, dim);
+    double h = 0.001;
+    double wfminus, wfplus, wfold;
+    mat rPlus = zeros(nParticles, dim);
+    mat rMinus = zeros(nParticles, dim);
+    rPlus = rMinus = rNew;
+    //--------------------------------------------------------------------------
+    wfold = slater->evaluate(rNew);
+    // Gradient slater
+    for (int i = 0; i < nParticles; i++) {
+        for (int j = 0; j < dim; j++) {
+            rPlus(i, j) = rNew(i, j) + h;
+            rMinus(i, j) = rNew(i, j) - h;
+            wfminus = slater->evaluate(rMinus);
+            wfplus = slater->evaluate(rPlus);
+            slaterNum(i, j) = (wfplus - wfminus) / (2 * h * wfold);
+            rPlus(i, j) = rNew(i, j);
+            rMinus(i, j) = rNew(i, j);
+        }
+    }
+    //--------------------------------------------------------------------------
+    // Gradient slater
+    wfold = exp(jastrow->evaluate(rNew));
+    for (int i = 0; i < nParticles; i++) {
+        for (int j = 0; j < dim; j++) {
+            rPlus(i, j) = rNew(i, j) + h;
+            rMinus(i, j) = rNew(i, j) - h;
+            wfminus = exp(jastrow->evaluate(rMinus));
+            wfplus = exp(jastrow->evaluate(rPlus));
+            jastrowNum(i, j) = (wfplus - wfminus) / (2 * h * wfold);
+            rPlus(i, j) = rNew(i, j);
+            rMinus(i, j) = rNew(i, j);
+        }
+    }
+    
+    q_f = 2*(slaterNum + jastrowNum);
+    //--------------------------------------------------------------------------
+#endif
 
     return q_f;
 }
+/*
+     q_f = zeros(nParticles, dim);
+    double h = 0.001;
 
+    double wfminus, wfplus, wfold;
+
+    wfold = evaluate(rNew);
+
+    mat rPlus = zeros(nParticles, dim);
+    mat rMinus = zeros(nParticles, dim);
+
+    rPlus = rMinus = rNew;
+
+    for (int i = 0; i < nParticles; i++) {
+        for (int j = 0; j < dim; j++) {
+            rPlus(i, j) = rNew(i, j) + h;
+            rMinus(i, j) = rNew(i, j) - h;
+            wfminus = evaluate(rMinus);
+            wfplus = evaluate(rPlus);
+
+            q_f(i, j) = 2 * (wfplus - wfminus) / (2 * h * wfold);
+            rPlus(i, j) = rNew(i, j);
+            rMinus(i, j) = rNew(i, j);
+        }
+    }
+ */
 ////////////////////////////////////////////////////////////////////////////////
 
 void WaveFunction::calculateEnergy() {
     double EKin = 0;
     double EPot = 0;
+    rowvec gradientOrbital;
+    rowvec gradientJastrow;
+
+    double EKinAnalytic;
+    double EKinNumeric;
+
+#define ANALYTIC_ENERGY 1
+#define NUMERICAL_ENERGY 0
+#define PRINT_DIFF_ENERGY 0
+
+
+#if ANALYTIC_ENERGY
+    EKin = 0;
 
     // Looping through all particles
     for (int i = 0; i < nParticles; i++) {
@@ -231,12 +353,56 @@ void WaveFunction::calculateEnergy() {
             EKin += jastrow->getLaplacian(rOld, i);
 
             // Dot product between the gradients of the orbital- and Jastrow function.
-            rowvec gradient_orbital = slater->getGradient();
-            rowvec gradient_jastrow = jastrow->getGradient();
+            gradientOrbital = slater->getGradient();
+            gradientJastrow = jastrow->getGradient();
 
-            EKin += 2 * dot(gradient_orbital, gradient_jastrow);
+            EKin += 2 * dot(gradientOrbital, gradientJastrow);
         }
     }
+
+    EKinAnalytic = EKin;
+
+#endif
+#if NUMERICAL_ENERGY
+    EKin = 0;
+    double h = 0.0001;
+
+    double wfminus, wfplus, wfold;
+
+    wfold = evaluate(rNew);
+
+    mat rPlus = zeros(nParticles, dim);
+    mat rMinus = zeros(nParticles, dim);
+
+    rPlus = rMinus = rNew;
+
+    for (int i = 0; i < nParticles; i++) {
+        for (int j = 0; j < dim; j++) {
+            rPlus(i, j) = rNew(i, j) + h;
+            rMinus(i, j) = rNew(i, j) - h;
+
+            wfminus = evaluate(rMinus);
+            wfplus = evaluate(rPlus);
+
+            EKin += (wfplus - 2 * wfold + wfminus) / (h * h * wfold);
+
+            rPlus(i, j) = rNew(i, j);
+            rMinus(i, j) = rNew(i, j);
+        }
+    }
+#if    PRINT_DIFF_ENERGY
+    EKinNumeric = EKin;
+    double error = EKinNumeric - EKinAnalytic;
+    if (abs(error) > 1e-2) {
+        EPot = hamiltonian->getEnergy(rOld);
+        cout << "-------------\n";
+        cout << error << endl;
+        cout << "E anal = " << -0.5 * EKinAnalytic + EPot << endl;
+        cout << "E num = " << -0.5 * EKinNumeric + EPot << endl;
+    }
+#endif
+
+#endif
 
     EKin = -0.5 * EKin;
     EPot = hamiltonian->getEnergy(rOld);
@@ -276,7 +442,7 @@ void WaveFunction::setNewVariationalParameters(double alpha, double beta) {
 
 void WaveFunction::setOptimalStepLength() {
     double min = 0.01;
-    double max = 3.5;
+    double max = 2.8;
     double tolerance = 0.01;
 
     while ((max - min) > tolerance) {
@@ -293,7 +459,7 @@ void WaveFunction::setOptimalStepLength() {
 ////////////////////////////////////////////////////////////////////////////////
 
 double WaveFunction::difference(double step_length) {
-    double SlSamples = 1e3;
+    double SlSamples = 1e4;
     double accepted;
     double accepted_tmp;
     stepLength = step_length;
@@ -309,3 +475,63 @@ double WaveFunction::difference(double step_length) {
 
     return (double) accepted / (SlSamples * nParticles) - 0.5;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool WaveFunction::DMCtryNewPosition(int active) {
+    this->activeParticle = active;
+    bool accepted = false;
+
+    // Calculating new trial position.
+    for (int i = 0; i < dim; i++)
+        rNew(activeParticle, i) = rOld(activeParticle, i) + D * qForceOld(activeParticle, i) * dt + DRanNormalZigVec() * sqrtDt;
+
+    // Updating Slater
+    slater->setPosition(rNew, activeParticle);
+    slater->updateMatrix();
+    slater->updateInverse();
+
+    // Updating the quantum force.
+    qForce = newQForce();
+
+    //--------------------------------------------------------------------------
+    // Calculating the diffusion ratio between the Green's functions.     
+    //--------------------------------------------------------------------------
+    double greensFunction = 0;
+
+    for (int i = 0; i < nParticles; i++) {
+        for (int j = 0; j < dim; j++) {
+            greensFunction +=
+                    (qForceOld(i, j) + qForce(i, j)) *
+                    (D * dt * 0.5 * (qForceOld(i, j) - qForce(i, j)) - rNew(i, j) + rOld(i, j));
+        }
+    }
+
+    greensFunction = exp(0.5 * greensFunction);
+    //--------------------------------------------------------------------------
+    // Metropolis-Hastings acceptance test.
+    //--------------------------------------------------------------------------
+    double R = WFRatio();
+    R = R * R * greensFunction;
+
+    // Fixed node approximation
+    if (R < 0)
+        return accepted;
+
+    if (ran3(&idum) <= R) {
+        accepted = true;
+        rOld = rNew;
+        qForceOld = qForce;
+        slater->acceptPosition();
+        calculateEnergy();
+    } else {
+        // If the move is not accepted the position is reset.
+        qForce = qForceOld;
+        slater->rejectPosition();
+        rNew = rOld;
+    }
+    //--------------------------------------------------------------------------
+    return accepted;
+}
+
+////////////////////////////////////////////////////////////////////////////////

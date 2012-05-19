@@ -1,6 +1,6 @@
 /* 
  * File:   SGD.cpp
- * Author: zigg
+ * Author: Sigve
  * 
  * Created on May 10, 2012, 7:42 PM
  */
@@ -20,6 +20,7 @@ SGD::SGD() {
     double tPrev, t, step;
     rowvec parameter(2), gradient(2), gradientLocal(2), gradientOld(2), nVar(2);
     double localE;
+    int correlationLength;
     long idum;
     writeToFile = false;
 
@@ -46,6 +47,7 @@ SGD::SGD() {
         w = INIreader.GetDouble("SGD", "w");
         nParticles = INIreader.GetInt("SGD", "nParticles");
         m = INIreader.GetInt("SGD", "m");
+        correlationLength = INIreader.GetInt("SGD", "correlationLength");
 
         usingJastrow = INIreader.GetBool("SGD", "usingJastrow");
         writeToFile = INIreader.GetBool("SGD", "writeToFile");
@@ -76,6 +78,7 @@ SGD::SGD() {
     MPI_Bcast(&nParticles, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&usingJastrow, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&m, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&correlationLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     MPI_Bcast(&fMax, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&fMin, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -86,13 +89,13 @@ SGD::SGD() {
     MPI_Bcast(&maxStep, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
 #if 0
-    cout 
-            << "\t A = " << A 
-            << "\t a = " << a 
-            << "\t maxStep = " << maxStep 
-            << "\t expo = " << expo 
-            << "\t omega = " << omega 
-            << "\t fMin = " << fMin 
+    cout
+            << "\t A = " << A
+            << "\t a = " << a
+            << "\t maxStep = " << maxStep
+            << "\t expo = " << expo
+            << "\t omega = " << omega
+            << "\t fMin = " << fMin
             << "\t fMax = " << fMax
             << endl;
 #endif
@@ -104,37 +107,77 @@ SGD::SGD() {
 
     WaveFunction * walker[m];
 
-    for (int k = 0; k < m; k++) {
-        // Giving each walker a unique seed.
-        idum = -1 - myRank - time(NULL) - k;
+    idum = -1 - myRank - time(NULL);
 
-        Orbital *orbital = new QDOrbital(dim, alpha, w);
-        Jastrow * jastrow = NULL;
-        if (usingJastrow)
-            jastrow = new QDJastrow(dim, nParticles, beta);
+    Orbital *orbital = new QDOrbital(dim, alpha, w);
+    Jastrow * jastrow = NULL;
+    if (usingJastrow)
+        jastrow = new QDJastrow(dim, nParticles, beta);
 
-        Hamiltonian *hamiltonian = new QDHamiltonian(dim, nParticles, w, usingJastrow);
-        WaveFunction *wf = new WaveFunction(dim, nParticles, idum, orbital, jastrow, hamiltonian);
+    Hamiltonian *hamiltonian = new QDHamiltonian(dim, nParticles, w, usingJastrow);
+    WaveFunction *wf = new WaveFunction(dim, nParticles, idum, orbital, jastrow, hamiltonian);
 
-        // If we are using brute force sampling we have to calculate 
-        // the optimal step length.
-        if (!importanceSampling)
-            wf->setOptimalStepLength();
+    // If we are using brute force sampling we have to calculate 
+    // the optimal step length.
+    if (!importanceSampling)
+        wf->setOptimalStepLength();
 
-        // Thermalizing walker.
-        for (int i = 0; i < thermalization; i++) {
-            for (int j = 0; j < nParticles; j++) {
-                if (importanceSampling)
-                    wf->tryNewPosition(j);
-                else
-                    wf->tryNewPositionBF(j);
-            }
+
+    // Thermalizing walker.
+    int k = 0;
+    int thermCorr = m*correlationLength;
+
+    for (int i = 0; i <= thermalization + thermCorr; i++) {
+        for (int j = 0; j < nParticles; j++) {
+            if (importanceSampling)
+                wf->tryNewPosition(j);
+            else
+                wf->tryNewPositionBF(j);
         }
 
         // Storing walker.
-        walker[k] = wf;
+        if (i > thermalization) {
+            if ((i - thermalization) % (correlationLength) == 0) {
+                if (myRank == 0)
+                    cout << "k = " << k << endl;
+                walker[k] = wf->clone();
+                k++;
+            }
+        }
     }
 
+    /*
+     for (int k = 0; k < m; k++) {
+            // Giving each walker a unique seed.
+            idum = -1 - myRank - time(NULL) - k;
+        
+            Orbital *orbital = new QDOrbital(dim, alpha, w);
+            Jastrow * jastrow = NULL;
+            if (usingJastrow)
+                jastrow = new QDJastrow(dim, nParticles, beta);
+
+            Hamiltonian *hamiltonian = new QDHamiltonian(dim, nParticles, w, usingJastrow);
+            WaveFunction *wf = new WaveFunction(dim, nParticles, idum, orbital, jastrow, hamiltonian);
+
+            // If we are using brute force sampling we have to calculate 
+            // the optimal step length.
+            if (!importanceSampling)
+                wf->setOptimalStepLength();
+
+            // Thermalizing walker.
+            for (int i = 0; i < thermalization; i++) {
+                for (int j = 0; j < nParticles; j++) {
+                    if (importanceSampling)
+                        wf->tryNewPosition(j);
+                    else
+                        wf->tryNewPositionBF(j);
+                }
+            }
+
+            // Storing walker.
+            walker[k] = wf;
+        }
+     **/
     //--------------------------------------------------------------------------
     ofstream outStream;
     if (myRank == 0) {
@@ -152,10 +195,10 @@ SGD::SGD() {
     parameter(1) = beta;
     nVar(0) = 5;
     nVar(1) = 5;
-    gradientOld = zeros(1,2);
+    gradientOld = zeros(1, 2);
     //-------------------------------------------------------------------------- 
     for (int sample = 1; sample <= SGDSamples; sample++) {
-
+ 
         // Moving walkers        
         E = 0;
         accepted = 0;
@@ -189,7 +232,7 @@ SGD::SGD() {
         E /= (nNodes * m * McSamples);
         gradient /= (nNodes * m * McSamples);
         gradientLocal /= (nNodes * m * McSamples);
-  
+
         // The total variational gradient
         gradient = 2 * (gradientLocal - gradient * E);
         //----------------------------------------------------------------------
@@ -201,7 +244,7 @@ SGD::SGD() {
             t = 0;
         //----------------------------------------------------------------------
         // Printing progress
-        
+
         if (myRank == 0) {
             cout << "\r"
                     << "\t SGA cycle = " << sample
@@ -211,7 +254,7 @@ SGD::SGD() {
                     << "\t t = " << t
                     << "\t step = " << step
                     //<< "\xd";
-                   << endl;
+                    << endl;
             //fflush(stdout);
         }
 
@@ -248,20 +291,26 @@ SGD::SGD() {
         // Storing previous values.
         tPrev = t;
         gradientOld = gradient;
-
     }
 
     if (myRank == 0)
         outStream.close();
     //--------------------------------------------------------------------------
     // Cleaning up
-    for (int i = 0; i < m; i++)
-        delete walker[i];
+    //for (int i = 0; i < m; i++)
+        //delete walker[i];
+    
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 SGD::SGD(const SGD& orig) {
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
 SGD::~SGD() {
 }
+
+////////////////////////////////////////////////////////////////////////////////
 

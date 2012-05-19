@@ -15,8 +15,8 @@ NM=nm
 CCADMIN=CCadmin
 RANLIB=ranlib
 CC=gcc
-CCC=g++
-CXX=g++
+CCC=mpicxx
+CXX=mpicxx
 FC=gfortran
 AS=as
 
@@ -35,14 +35,15 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 # Object Files
 OBJECTFILES= \
 	${OBJECTDIR}/QD/QDJastrow.o \
+	${OBJECTDIR}/includes/zigrandom.o \
 	${OBJECTDIR}/main.o \
 	${OBJECTDIR}/QD/QDOrbital.o \
-	${OBJECTDIR}/includes/zigrandom.o \
 	${OBJECTDIR}/OneBodyDensity.o \
 	${OBJECTDIR}/Slater.o \
 	${OBJECTDIR}/Hamiltonian.o \
 	${OBJECTDIR}/includes/lib.o \
 	${OBJECTDIR}/SGD.o \
+	${OBJECTDIR}/DMC.o \
 	${OBJECTDIR}/includes/zignor.o \
 	${OBJECTDIR}/Blocking.o \
 	${OBJECTDIR}/QD/QDHamiltonian.o \
@@ -60,8 +61,8 @@ OBJECTFILES= \
 CFLAGS=
 
 # CC Compiler Flags
-CCFLAGS=
-CXXFLAGS=
+CCFLAGS=-O3 -DMPICH_IGNORE_CXX_SEEK -llapack -lblas -larmadillo
+CXXFLAGS=-O3 -DMPICH_IGNORE_CXX_SEEK -llapack -lblas -larmadillo
 
 # Fortran Compiler Flags
 FFLAGS=
@@ -85,6 +86,11 @@ ${OBJECTDIR}/QD/QDJastrow.o: QD/QDJastrow.cpp
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/QD/QDJastrow.o QD/QDJastrow.cpp
 
+${OBJECTDIR}/includes/zigrandom.o: includes/zigrandom.c 
+	${MKDIR} -p ${OBJECTDIR}/includes
+	${RM} $@.d
+	$(COMPILE.c) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/includes/zigrandom.o includes/zigrandom.c
+
 ${OBJECTDIR}/main.o: main.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
@@ -94,11 +100,6 @@ ${OBJECTDIR}/QD/QDOrbital.o: QD/QDOrbital.cpp
 	${MKDIR} -p ${OBJECTDIR}/QD
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/QD/QDOrbital.o QD/QDOrbital.cpp
-
-${OBJECTDIR}/includes/zigrandom.o: includes/zigrandom.c 
-	${MKDIR} -p ${OBJECTDIR}/includes
-	${RM} $@.d
-	$(COMPILE.c) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/includes/zigrandom.o includes/zigrandom.c
 
 ${OBJECTDIR}/OneBodyDensity.o: OneBodyDensity.cpp 
 	${MKDIR} -p ${OBJECTDIR}
@@ -124,6 +125,11 @@ ${OBJECTDIR}/SGD.o: SGD.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/SGD.o SGD.cpp
+
+${OBJECTDIR}/DMC.o: DMC.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/DMC.o DMC.cpp
 
 ${OBJECTDIR}/includes/zignor.o: includes/zignor.c 
 	${MKDIR} -p ${OBJECTDIR}/includes

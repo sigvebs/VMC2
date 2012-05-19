@@ -4,6 +4,7 @@ clc
 %% Adding plotting paths for myaa
 addpath('C:\Users\zigg\Dropbox\Matlab\myaa')
 addpath('M:\Dropbox\Matlab\myaa')
+addpath('~/Dropbox/Matlab/myaa')
 addpath('/mn/felt/u9/sigve/Dropbox/Matlab/myaa')
 
 %%
@@ -71,7 +72,7 @@ set(gca, ...
   'YColor'      , [.1 .1 .1], ...
   'ZColor'      , [.1 .1 .1], ...
   'LineWidth'   , 1.2         );
-
+%%
 set(gcf, 'PaperPosition', [0 0 12 10]); %Position plot at left hand corner with width 5 and height 5.
 set(gcf, 'PaperSize', [12 10]); %Set the paper to have width 5 and height 5.
 saveas(gcf, '2particles_n4_w001_DENSITY', 'pdf') %Save figure

@@ -14,6 +14,7 @@
 #include "OneBodyDensity.h"
 #include "SGD.h"
 #include "Blocking.h"
+#include "DMC.h"
 
 using namespace std;
 
@@ -54,6 +55,10 @@ int main(int argc, char** argv) {
             new ComputeOneWF();
             if (myRank == 0)
                 new Blocking(nNodes);
+            break;
+        case 5:
+            if (myRank == 0)
+                new DMC();
             break;
     }
 

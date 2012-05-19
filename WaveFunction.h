@@ -25,7 +25,7 @@ public:
 
     bool tryNewPosition(int);
     double sampleEnergy();
- 
+
     double WFRatio();
     double evaluate(const mat &);
     mat newQForce();
@@ -36,11 +36,18 @@ public:
     void initSlater();
     rowvec getVariationGradient();
     void setNewVariationalParameters(double, double);
-    
+
     // Brute force
     bool tryNewPositionBF(int);
     void setOptimalStepLength();
     double difference(double);
+
+    // DMC
+    bool DMCtryNewPosition(int);
+
+    virtual WaveFunction* clone() const {
+        return new WaveFunction(*this);
+    }
 
 private:
     bool usingJastrow;
@@ -49,10 +56,10 @@ private:
 
     mat rOld;
     mat rNew;
-    
+
     mat qForce;
     mat qForceOld;
-    
+
     Jastrow *jastrow;
     Slater *slater;
     Orbital *orbital;
@@ -61,12 +68,12 @@ private:
     double E;
     int dim;
     int nParticles;
-    
+
     // Importance sampling
     double dt;
     double sqrtDt;
     double D;
-    
+
     // Brute force
     double stepLength;
 };

@@ -28,6 +28,7 @@ QDJastrow::QDJastrow(int dim, int nParticles, double beta) : Jastrow(dim, nParti
 
     // Initiating a matrix with all the spin dependant a-values.
     a = zeros(nParticles, nParticles);
+    gradient = zeros(1, dim);
 
     for (int i = 0; i < nParticles; i++) {
         for (int j = 0; j < nParticles; j++) {
@@ -91,7 +92,9 @@ double QDJastrow::getLaplacian(const mat &r, int i) {
 
 void QDJastrow::computeGradient(const mat &r, int i) {
     double r_ki;
-    gradient = zeros(1, dim);
+    //gradient = zeros(1, dim);
+    gradient(0) = 0;
+    gradient(1) = 0;
 
     // Before i
     for (int k = 0; k < i; k++) {

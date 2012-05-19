@@ -23,18 +23,29 @@ public:
     void updateMatrix();
     void setPosition(const mat &, int);
     double getLaplacian(int);
+    double getLaplacianNumerical(int);
     void computeGradient(int);
     double getRatio();
 
     rowvec getGradient() {
         return gradient;
     };
+
+    rowvec getGradientNumerical(int);
+
     void updateInverse();
-    void acceptNewPosition();
+    void updateInverseNumeric();
+    void acceptPosition();
+    void rejectPosition();
     void init();
     double evaluate(const mat &);
     double getVariationalGradient();
-private:
+
+    virtual Slater* clone() const {
+        return new Slater(*this);
+    }
+
+public: // TODO: Change to private
     Orbital *orbital;
     mat rNew;
     mat rOld;

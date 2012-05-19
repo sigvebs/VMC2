@@ -29,6 +29,8 @@ private:
     double wAlpha;
     double sqrtWAlpha;
     double sqrtWDividedAlpha;
+    
+    rowvec gradient;
 };
 
 #endif	/* QDORBITAL_H */
