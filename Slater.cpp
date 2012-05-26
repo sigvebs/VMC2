@@ -261,11 +261,11 @@ double Slater::getLaplacian(int i) {
     double sum = 0;
     if (i < N) {
         for (int j = 0; j < N; j++) { // Spin up.
-            sum += orbital->evaluateLaplacian(rNew.row(i), nx(j), ny(j)) * DpInv(j, i);
+            sum += orbital->evaluateLaplacian(rNew.row(i), nx(j), ny(j)) * DpInvNew(j, i);
         }
     } else {
         for (int j = 0; j < N; j++) { // Spin down.
-            sum += orbital->evaluateLaplacian(rNew.row(i), nx(j), ny(j)) * DmInv(j, i - N);
+            sum += orbital->evaluateLaplacian(rNew.row(i), nx(j), ny(j)) * DmInvNew(j, i - N);
         }
     }
 

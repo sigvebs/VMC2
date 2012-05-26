@@ -138,7 +138,7 @@ SGD::SGD() {
         // Storing walker.
         if (i > thermalization) {
             if ((i - thermalization) % (correlationLength) == 0) {
-                if (myRank == 0)
+                if (myRank == 999)
                     cout << "k = " << k << endl;
                 walker[k] = wf->clone();
                 k++;
@@ -186,8 +186,12 @@ SGD::SGD() {
         cout << "\t omega = " << w;
         cout << "\t alpha_0 = " << alpha;
         cout << "\t beta_0 = " << beta;
+        cout << endl;
 
         outStream.open((const char*) &fileName[0]);
+
+        // Writing to file
+        outStream << SGDSamples << " " << McSamples << " " << m*nNodes << " " << nParticles << " " << w << endl;
     }
     //--------------------------------------------------------------------------
     tPrev = 0;
@@ -197,8 +201,10 @@ SGD::SGD() {
     nVar(1) = 5;
     gradientOld = zeros(1, 2);
     //-------------------------------------------------------------------------- 
+    // Starting SGD algortithm.
+    //-------------------------------------------------------------------------- 
     for (int sample = 1; sample <= SGDSamples; sample++) {
- 
+
         // Moving walkers        
         E = 0;
         accepted = 0;
@@ -207,18 +213,18 @@ SGD::SGD() {
 
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < McSamples; j++) {
-                for (int j = 0; j < nParticles; j++) {
-
-                    if (importanceSampling)
-                        accepted += walker[i]->tryNewPosition(j);
-                    else
-                        accepted += walker[i]->tryNewPositionBF(j);
-
-                    localE = walker[i]->sampleEnergy();
-                    E += localE / nParticles;
-                    gradient += walker[i]->getVariationGradient();
-                    gradientLocal += walker[i]->getVariationGradient() * localE;
+                for (int k = 0; k < nParticles; k++) {
+                    if (importanceSampling) {
+                        accepted += walker[i]->tryNewPosition(k);
+                    } else {
+                        accepted += walker[i]->tryNewPositionBF(k);
+                    }
                 }
+                localE = walker[i]->sampleEnergy();
+                E += localE; // / nParticles;
+                gradient += walker[i]->getVariationGradient();
+                gradientLocal += walker[i]->getVariationGradient() * localE;
+                //}
             }
         }
 
@@ -236,6 +242,8 @@ SGD::SGD() {
         // The total variational gradient
         gradient = 2 * (gradientLocal - gradient * E);
         //----------------------------------------------------------------------
+        // Algoritm for the new step length
+        //----------------------------------------------------------------------
         double x = -dot(gradient, gradientOld);
         f = fMin + (fMax - fMin) / (1 - (fMax / fMin) * exp(-x / omega));
         t = tPrev + f;
@@ -244,18 +252,16 @@ SGD::SGD() {
             t = 0;
         //----------------------------------------------------------------------
         // Printing progress
-
-        if (myRank == 0) {
-            cout << "\r"
-                    << "\t SGA cycle = " << sample
+        if (myRank == 0 && sample % 100) {
+            fflush(stdout);
+            cout
+                    << "SGA cycle = " << sample
                     << "\t alpha = " << parameter(0)
                     << "\t beta = " << parameter(1)
                     << "\t E = " << E
                     << "\t t = " << t
                     << "\t step = " << step
-                    //<< "\xd";
-                    << endl;
-            //fflush(stdout);
+                    << "\xd";
         }
 
         //----------------------------------------------------------------------
@@ -277,6 +283,9 @@ SGD::SGD() {
                 step *= maxStep / fabs(step);
 #endif
             parameter(i) -= step;
+
+            // We don't allow negative parameters
+            parameter(i) = abs(parameter(i));
         }
 
         //----------------------------------------------------------------------
@@ -293,18 +302,26 @@ SGD::SGD() {
         gradientOld = gradient;
     }
 
-    if (myRank == 0)
+    if (myRank == 0) {
+        cout
+                << endl
+                << "Finished. Ending parameters: "
+                << "\t alpha = " << parameter(0)
+                << "\t beta = " << parameter(1)
+                << "\xd";
+        //<< endl;
         outStream.close();
+    }
     //--------------------------------------------------------------------------
     // Cleaning up
     //for (int i = 0; i < m; i++)
-        //delete walker[i];
-    
+    //delete walker[i];
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-SGD::SGD(const SGD& orig) {
+SGD::SGD(const SGD & orig) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -10,12 +10,17 @@
 
 #include "WaveFunction.h"
 
+#include <cstdlib>
+#include <list>
+#include <vector>
+
 class DMC {
 public:
     DMC();
     DMC(const DMC& orig);
     virtual ~DMC();
 
+    void writeDistributionToFile(std::string);
     WaveFunction* thermalizedWalker();
 private:
     int myRank, nNodes;
@@ -28,6 +33,7 @@ private:
     int McSamples;
     int nWalkers;
     int nSteps;
+    int DMCSamples;
 
     bool importanceSampling;
     bool usingJastrow;
@@ -36,6 +42,8 @@ private:
     double alpha, beta, w;
     int dim;
     double tau;
+    
+    std::vector<WaveFunction*> walkers;
 };
 
 #endif	/* DMC_H */

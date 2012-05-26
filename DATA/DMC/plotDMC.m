@@ -1,10 +1,16 @@
 %% Loading dataset.
 clear
 clc
+
+% Reading data from file
 imported_data = importdata('dmc.dat'); 
+nParticles = imported_data(1,1);
+w = imported_data(1,2);
+DMCSamples  = imported_data(1,3);
+blockSize = imported_data(1,4);
 
 thermal = 20;
-E = imported_data(:,1);
+E = imported_data(2:length(imported_data(:,1)),1);
 
 % Ploting block energy
 plot(E, 'color', [rand rand rand]);
@@ -21,4 +27,10 @@ end
 plot(cumE, 'color', [rand rand rand])
 hold off
 
-Etot = sum(E(thermal:length(E)))/length(thermal:length(E))
+Etot = sum(E(thermal:length(E)))/length(thermal:length(E));
+
+% Variance
+var = dot(E(thermal:length(E)), E(thermal:length(E)))/length(thermal:length(E)) - Etot^2;
+
+% Writing results in latex format
+fprintf('%i & %.2f & %.6g & %.5g \\\\', nParticles, w, Etot, var);

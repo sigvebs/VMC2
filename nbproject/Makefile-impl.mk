@@ -31,7 +31,7 @@ DEFAULTCONF=Debug
 CONF=${DEFAULTCONF}
 
 # All Configurations
-ALLCONFS=Debug Debug4nodes DebugHjemme ReleaseHjemme Release Profiler 
+ALLCONFS=Debug Debug4nodes DebugHjemme Release Release4Nodes Profiler ReleaseHjemme 
 
 
 # build

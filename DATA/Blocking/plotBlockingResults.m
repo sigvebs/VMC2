@@ -5,7 +5,7 @@ addpath('C:\Users\zigg\Dropbox\Matlab\myaa')
 addpath('M:\Dropbox\Matlab\myaa')
 
 imported_data = importdata('blockingResults.dat');
-%% Storing imported data in the right structures.
+% Storing imported data in the right structures.
 N = length(imported_data(:,1));
 dN = imported_data(2,1) - imported_data(1,1);
 E = imported_data(:,2);
@@ -20,7 +20,7 @@ color = [177, 0, 38]/256;
 fig =  figure('Color',[1 1 1]);
 pl = plot(blocks, sigma,'.','color', color, 'LineWidth',0.5);%, 'linesmoothing', 'on', 'color', myMap(2,:), 'LineWidth',1.5);
 
-hYLabel = ylabel('Error');
+hYLabel = ylabel('\sigma');
 hXLabel = xlabel('Block size');
 
 grid off

@@ -5,8 +5,10 @@
  * Created on May 9, 2012, 11:05 PM
  */
 
+#include <mpi.h>
 #include "WaveFunction.h"
 #include "includes/lib.h"
+#include "includes/ini.h"
 
 #include "includes/ziggurat.hpp"
 #include "includes/zignor.h"
@@ -36,11 +38,18 @@ WaveFunction::WaveFunction(int dim, int nParticles, long idum, Orbital *orbital,
         usingJastrow = false;
 
     // Initializing positions
-    dt = 0.0005;
+    ini INIreader("QD.ini");
+    int myRank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    if (myRank == 0) {
+        dt = INIreader.GetDouble("main", "dt");
+    }
+    MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
     sqrtDt = sqrt(dt);
     D = 0.5;
 
-    rOld = randu(nParticles, dim);
+    rOld = 2*randn(nParticles, dim);
     rNew = rOld;
     slater->setPosition(rNew, 0);
     slater->init();
@@ -54,9 +63,11 @@ WaveFunction::WaveFunction(int dim, int nParticles, long idum, Orbital *orbital,
 WaveFunction::WaveFunction(const WaveFunction& orig) {
     usingJastrow = orig.usingJastrow;
     activeParticle = orig.activeParticle;
-    idum = orig.idum;
+    idum = orig.idum - time(NULL);
+    stepLength = orig.stepLength;
 
     rOld = orig.rOld;
+    
     rNew = orig.rNew;
 
     qForce = orig.qForce;
@@ -74,9 +85,6 @@ WaveFunction::WaveFunction(const WaveFunction& orig) {
     dt = orig.dt;
     sqrtDt = orig.sqrtDt;
     D = orig.D;
-
-    int dum = (int) idum;
-    RanNormalSetSeedZigVec(&dum, 200);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,16 +116,17 @@ bool WaveFunction::tryNewPositionBF(int activeParticle) {
     bool accepted = false;
 
     // Calculating new trial position.
-    for (int i = 0; i < dim; i++)
+    for (int i = 0; i < dim; i++) {
         rNew(activeParticle, i) = rOld(activeParticle, i) + stepLength * (ran3(&idum) - 0.5);
+    }
 
-    // Updating Slater
+    // Updating the Slater matrix
     slater->setPosition(rNew, activeParticle);
     slater->updateMatrix();
 
-
     //--------------------------------------------------------------------------
     // Metropolis acceptance test.
+    //--------------------------------------------------------------------------
     double R = WFRatio();
     R = R * R;
 
@@ -145,35 +154,35 @@ bool WaveFunction::tryNewPosition(int active) {
 
     // Calculating new trial position.
     for (int i = 0; i < dim; i++)
-        rNew(activeParticle, i) = rOld(activeParticle, i) + D * qForceOld(activeParticle, i) * dt + DRanNormalZigVec() * sqrtDt;
+        rNew(activeParticle, i) = rOld(activeParticle, i) + D * qForceOld(activeParticle, i) * dt + 2 * D * sqrtDt * DRanNormalZigVec();
 
     // Updating Slater
     slater->setPosition(rNew, activeParticle);
     slater->updateMatrix();
+    double R = WFRatio();
     slater->updateInverse();
-
+   
     // Updating the quantum force.
     qForce = newQForce();
-
     //--------------------------------------------------------------------------
-    // Calculating the ratio between the Green's functions.     
+    // Calculating the diffusion ratio between the Green's functions.     
+    //--------------------------------------------------------------------------
     double greensFunction = 0;
 
     for (int i = 0; i < nParticles; i++) {
         for (int j = 0; j < dim; j++) {
             greensFunction +=
-                    (qForceOld(i, j) + qForce(i, j)) *
-                    (D * dt * 0.5 * (qForceOld(i, j) - qForce(i, j)) - rNew(i, j) + rOld(i, j));
+                    0.5 * (qForceOld(i, j) + qForce(i, j)) *
+                    (D * dt * 0.5 * (qForceOld(i, j) - qForce(i, j)) - (rNew(i, j) - rOld(i, j)));
         }
     }
 
-    greensFunction = exp(0.5 * greensFunction);
-
+    greensFunction = exp(greensFunction);
     //--------------------------------------------------------------------------
     // Metropolis-Hastings acceptance test.
-    double R = WFRatio();
+    //--------------------------------------------------------------------------
     R = R * R * greensFunction;
-
+    test();
     if (ran3(&idum) <= R) {
         accepted = true;
         rOld = rNew;
@@ -212,13 +221,29 @@ double WaveFunction::WFRatio() {
 mat WaveFunction::newQForce() {
     mat q_f = zeros(nParticles, dim);
     rowvec gradientSlater;
-    rowvec gradientJastrow = zeros(1, dim);
-    //double R = slater->getRatio();
+    rowvec gradientJastrow;
 
-#define ANALYTICAL_GRADIENT 1
+#define ANALYTICAL 1
+#define ANALYTICAL_GRADIENT_DEBUG 0
 #define NUMERICAL_GRADIENT 0
+#define DEBUG_QFORCE 0
 
-#if ANALYTICAL_GRADIENT
+#if ANALYTICAL
+    for (int i = 0; i < nParticles; i++) {
+        // Slaters' gradient.
+        slater->computeGradient(i);
+        gradientSlater = slater->getGradient();
+
+        // Jastrow's gradient.
+        if (usingJastrow) {
+            jastrow->computeGradient(rNew, i);
+            gradientJastrow = jastrow->getGradient();
+            q_f.row(i) = 2.0 * (gradientJastrow + gradientSlater);
+        }
+    }
+#endif
+
+#if ANALYTICAL_GRADIENT_DEBUG
 
     //double errorThreshold = 1e-2;
     //rowvec gradientSlaterNum;
@@ -233,30 +258,28 @@ mat WaveFunction::newQForce() {
         if (usingJastrow) {
             jastrow->computeGradient(rNew, i);
             gradientJastrow = jastrow->getGradient();
+
+            /*
+            if (max(max(gradientSlater - gradientSlaterNum)) > errorThreshold)
+                cout
+                    << " Active particle = " << activeParticle
+                    << " i = " << i << endl
+                    << gradientSlater - gradientSlaterNum << endl;
+             */
+            q_f.row(i) = 2.0 * (gradientJastrow + gradientSlater);
+            //q_f.row(i) = 2.0 * (gradientJastrow + gradientSlaterNum);
         }
-
-        /*
-        if (max(max(gradientSlater - gradientSlaterNum)) > errorThreshold)
-            cout
-                << " Active particle = " << activeParticle
-                << " i = " << i << endl
-                << gradientSlater - gradientSlaterNum << endl;
-         */
-        q_f.row(i) = 2.0 * (gradientJastrow + gradientSlater);
-        //q_f.row(i) = 2.0 * (gradientJastrow + gradientSlaterNum);
     }
-
 #endif
 
 #if NUMERICAL_GRADIENT
 #if DEBUG_QFORCE
-    mat slaterNum = zeros(nParticles, dim);
-    mat jastrowNum = zeros(nParticles, dim);
+    mat qfAnalytic = q_f;
 #endif
     mat slaterNum = zeros(nParticles, dim);
     mat jastrowNum = zeros(nParticles, dim);
     q_f = zeros(nParticles, dim);
-    double h = 0.001;
+    double h = 0.00001;
     double wfminus, wfplus, wfold;
     mat rPlus = zeros(nParticles, dim);
     mat rMinus = zeros(nParticles, dim);
@@ -276,7 +299,7 @@ mat WaveFunction::newQForce() {
         }
     }
     //--------------------------------------------------------------------------
-    // Gradient slater
+    // Gradient Jastrow
     wfold = exp(jastrow->evaluate(rNew));
     for (int i = 0; i < nParticles; i++) {
         for (int j = 0; j < dim; j++) {
@@ -289,39 +312,22 @@ mat WaveFunction::newQForce() {
             rMinus(i, j) = rNew(i, j);
         }
     }
-    
-    q_f = 2*(slaterNum + jastrowNum);
+
+    q_f = 2 * (slaterNum + jastrowNum);
     //--------------------------------------------------------------------------
+#if DEBUG_QFORCE
+    if (max(max(abs(qfAnalytic - q_f))) > 1e-4)
+        cout
+            << "--------------------------" << endl
+            << "Max differance: " << max(max(abs(qfAnalytic - q_f))) << endl
+            << "analytic = " << endl << qfAnalytic << endl
+            << "numeric = " << endl << q_f << endl;
+#endif
 #endif
 
     return q_f;
 }
-/*
-     q_f = zeros(nParticles, dim);
-    double h = 0.001;
 
-    double wfminus, wfplus, wfold;
-
-    wfold = evaluate(rNew);
-
-    mat rPlus = zeros(nParticles, dim);
-    mat rMinus = zeros(nParticles, dim);
-
-    rPlus = rMinus = rNew;
-
-    for (int i = 0; i < nParticles; i++) {
-        for (int j = 0; j < dim; j++) {
-            rPlus(i, j) = rNew(i, j) + h;
-            rMinus(i, j) = rNew(i, j) - h;
-            wfminus = evaluate(rMinus);
-            wfplus = evaluate(rPlus);
-
-            q_f(i, j) = 2 * (wfplus - wfminus) / (2 * h * wfold);
-            rPlus(i, j) = rNew(i, j);
-            rMinus(i, j) = rNew(i, j);
-        }
-    }
- */
 ////////////////////////////////////////////////////////////////////////////////
 
 void WaveFunction::calculateEnergy() {
@@ -430,7 +436,8 @@ rowvec WaveFunction::getVariationGradient() {
 
 void WaveFunction::setNewVariationalParameters(double alpha, double beta) {
     orbital->setNewAlpha(alpha);
-    jastrow->setNewBeta(beta);
+    if (usingJastrow)
+        jastrow->setNewBeta(beta);
     slater->setPosition(rOld, 0);
     slater->init();
 
@@ -438,6 +445,7 @@ void WaveFunction::setNewVariationalParameters(double alpha, double beta) {
     for (int i = 0; i < nParticles; i++)
         tryNewPosition(i);
 }
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void WaveFunction::setOptimalStepLength() {
@@ -454,7 +462,6 @@ void WaveFunction::setOptimalStepLength() {
 
     stepLength = (min + max) / 2;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -484,7 +491,7 @@ bool WaveFunction::DMCtryNewPosition(int active) {
 
     // Calculating new trial position.
     for (int i = 0; i < dim; i++)
-        rNew(activeParticle, i) = rOld(activeParticle, i) + D * qForceOld(activeParticle, i) * dt + DRanNormalZigVec() * sqrtDt;
+        rNew(activeParticle, i) = rOld(activeParticle, i) + D * qForceOld(activeParticle, i) * dt + 2 * D * sqrtDt * DRanNormalZigVec();
 
     // Updating Slater
     slater->setPosition(rNew, activeParticle);
@@ -502,12 +509,13 @@ bool WaveFunction::DMCtryNewPosition(int active) {
     for (int i = 0; i < nParticles; i++) {
         for (int j = 0; j < dim; j++) {
             greensFunction +=
-                    (qForceOld(i, j) + qForce(i, j)) *
-                    (D * dt * 0.5 * (qForceOld(i, j) - qForce(i, j)) - rNew(i, j) + rOld(i, j));
+                    0.5 * (qForceOld(i, j) + qForce(i, j)) *
+                    (D * dt * 0.5 * (qForceOld(i, j) - qForce(i, j)) - (rNew(i, j) - rOld(i, j)));
         }
     }
 
-    greensFunction = exp(0.5 * greensFunction);
+    greensFunction = exp(greensFunction);
+
     //--------------------------------------------------------------------------
     // Metropolis-Hastings acceptance test.
     //--------------------------------------------------------------------------
@@ -515,8 +523,9 @@ bool WaveFunction::DMCtryNewPosition(int active) {
     R = R * R * greensFunction;
 
     // Fixed node approximation
-    if (R < 0)
+    if (R < 0) {
         return accepted;
+    }
 
     if (ran3(&idum) <= R) {
         accepted = true;
@@ -535,3 +544,43 @@ bool WaveFunction::DMCtryNewPosition(int active) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+void WaveFunction::test() {
+    mat dp = slater->Dp;
+    mat dm = slater->Dm;
+    mat dpNew = slater->DpNew;
+    mat dmNew = slater->DmNew;
+    mat dpInv = slater->DpInv;
+    mat dmInv = slater->DmInv;
+    mat dpInvNew = slater->DpInvNew;
+    mat dmInvNew = slater->DmInvNew;
+    /*
+    cout 
+            << "dp*dpInv = " << det(dp*dpInv) << endl
+            << "dm*dmInv = " << det(dm*dmInv) << endl
+            << "dpNew*dpInvNew = " << det(dpNew*dpInvNew) << endl
+            << "dmNew*dmInvNew = " << det(dmNew*dmInvNew) << endl
+            << endl;
+     */
+
+    // Old
+    double errorThreshold = 1e-12;
+    if (abs(det(dp * dpInv)) > 1 + errorThreshold || abs(det(dp * dpInv)) < 1 - errorThreshold) {
+        cout << "dp*dpInv = " << dp * dpInv << endl;
+        cout << "det(dp*dpInv) = " << det(dp * dpInv) << endl;
+    }
+    if (abs(det(dm * dmInv)) > 1 + errorThreshold || abs(det(dm * dmInv)) < 1 - errorThreshold) {
+        cout << "dm*dmInv = " << dm * dmInv << endl;
+        cout << "det(dm*dmInv) = " << det(dm * dmInv) << endl;
+    }
+
+    // New
+    if (abs(det(dpNew * dpInvNew)) > 1 + errorThreshold || abs(det(dpNew * dpInvNew)) < 1 - errorThreshold) {
+        cout << "dpNew*dpInvNew = " << dpNew * dpInvNew << endl;
+        cout << "det(dpNew*dpInvNew) = " << det(dpNew * dpInvNew) << endl;
+    }
+    if (abs(det(dmNew * dmInvNew)) > 1 + errorThreshold || abs(det(dmNew * dmInvNew)) < 1 - errorThreshold) {
+        cout << "dmNew*dmInvNew = " << dmNew * dmInvNew << endl;
+        cout << "det(dmNew*dmInvNew) = " << det(dmNew * dmInvNew) << endl;
+    }
+}

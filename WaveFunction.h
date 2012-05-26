@@ -49,6 +49,10 @@ public:
         return new WaveFunction(*this);
     }
 
+    void test();    
+    mat getROld(){
+        return rOld;
+    }
 private:
     bool usingJastrow;
     int activeParticle;
@@ -56,9 +60,12 @@ private:
 
     mat rOld;
     mat rNew;
-
+    
     mat qForce;
-    mat qForceOld;
+    mat qForceOld;    
+    
+    rowvec gradientSlater;
+    rowvec gradientJastrow;
 
     Jastrow *jastrow;
     Slater *slater;

@@ -34,8 +34,10 @@ ComputeOneWF::ComputeOneWF() {
     int accepted_tmp;
     double localE;
     long idum;
+    string fileName;
     //--------------------------------------------------------------------------
     // MPI
+    //--------------------------------------------------------------------------
     int myRank, nNodes;
     MPI_Comm_size(MPI_COMM_WORLD, &nNodes);
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
@@ -43,10 +45,12 @@ ComputeOneWF::ComputeOneWF() {
 
     //--------------------------------------------------------------------------
     // Reading data from QD.ini
+    //--------------------------------------------------------------------------
     if (myRank == 0) {
         cout << "Reading configuration from file " << endl;
         ini INIreader("QD.ini");
 
+        fileName = INIreader.GetString("ComputeOneWF", "fileName");
         McSamples = (int) INIreader.GetDouble("ComputeOneWF", "McSamples");
         importanceSampling = INIreader.GetBool("ComputeOneWF", "importanceSampling");
         thermalization = (int) INIreader.GetDouble("ComputeOneWF", "thermalization");
@@ -68,6 +72,7 @@ ComputeOneWF::ComputeOneWF() {
     }
     //--------------------------------------------------------------------------
     // Broadcasting data to all nodes.
+    //--------------------------------------------------------------------------
     if (myRank == 0)
         cout << "Broadcasting data to nodes." << endl;
 
@@ -84,6 +89,7 @@ ComputeOneWF::ComputeOneWF() {
 
     //--------------------------------------------------------------------------
     // Configuring the wave function.    
+    //--------------------------------------------------------------------------
     if (myRank == 0)
         cout << "Configuring the wave function." << endl;
 
@@ -100,11 +106,13 @@ ComputeOneWF::ComputeOneWF() {
         wf.setOptimalStepLength();
     //--------------------------------------------------------------------------
     // If Blocking
+    //--------------------------------------------------------------------------
     ostringstream filename;
     filename << "DATA/Blocking/blocking_" << myRank << ".dat";
     ofstream blockfile(filename.str().c_str(), ios::out | ios::binary);
     //--------------------------------------------------------------------------
     // Monte Carlo loop.    
+    //--------------------------------------------------------------------------
     if (myRank == 0)
         cout
             << "Starting Monte Carlo sampling with " << endl
@@ -119,21 +127,21 @@ ComputeOneWF::ComputeOneWF() {
     Esq = 0;
     for (int i = 0; i < McSamples + thermalization; i++) {
         for (int j = 0; j < nParticles; j++) {
-            
             if (importanceSampling) {
                 accepted_tmp = wf.tryNewPosition(j);
             } else {
                 accepted_tmp = wf.tryNewPositionBF(j);
             }
-            
-            if (i > thermalization) {
-                localE = wf.sampleEnergy();
-                E += localE;
-                Esq += localE*localE;
-                accepted += accepted_tmp;
+        }
+        
+        if (i > thermalization) {
+            localE = wf.sampleEnergy();
+            E += localE;
+            Esq += localE*localE;
+            accepted += accepted_tmp;
 
-                if (blocking)
-                    blockfile.write((char*) &localE, sizeof (double));
+            if (blocking) {
+                blockfile.write((char*) &localE, sizeof (double));
             }
         }
     }
@@ -143,23 +151,45 @@ ComputeOneWF::ComputeOneWF() {
 
     //--------------------------------------------------------------------------
     // Collecting and scaling results from all nodes.
+    //--------------------------------------------------------------------------
     if (myRank == 0)
         cout << "Collecting and scaling results from all nodes." << endl;
 
     MPI_Allreduce(MPI_IN_PLACE, &E, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &Esq, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &accepted, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    E /= (McSamples * nParticles * nNodes);
-    Esq /= (McSamples * nParticles * nNodes);
-    accepted /= (McSamples * nParticles * nNodes);
+    E /= (McSamples * nNodes);
+    Esq /= (McSamples * nNodes);
+    accepted /= (McSamples * nNodes);
 
     //--------------------------------------------------------------------------
     // Printing results.
-    if (myRank == 0)
+    //--------------------------------------------------------------------------
+    if (myRank == 0) {
         cout
-            << "\tE = " << E
-            << "\tVariance = " << Esq - E * E
-            << "\tAccepted = " << accepted
-            << endl;
+                << "\tE = " << E
+                << "\tVariance = " << Esq - E * E
+                << "\tAccepted = " << accepted
+                << endl;
+        //Writing results to file
+        ofstream outStream;
+        outStream.open((const char*) &fileName[0]);
+        outStream
+                << "McSamples = " << McSamples
+                << "\talpha = " << alpha
+                << "\tbeta = " << beta
+                << "\tw = " << w
+                << "\tE = " << E
+                << "\tVariance = " << Esq - E * E
+                << "\tAccepted = " << accepted
+                << endl;
+        outStream
+                << nParticles << " & "
+                << w << " & "
+                << E << " & "
+                << Esq - E * E << " \\\\"
+                << endl;
+        outStream.close();
+    }
 }
 ////////////////////////////////////////////////////////////////////////////////

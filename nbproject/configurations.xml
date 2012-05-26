@@ -97,7 +97,7 @@
           <commandLine>-O3 -DMPICH_IGNORE_CXX_SEEK -llapack -lblas -larmadillo</commandLine>
         </ccTool>
         <linkerTool>
-          <output>${TESTDIR}/TestFiles/f1</output>
+          <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmc2</output>
         </linkerTool>
       </compileType>
     </conf>
@@ -120,7 +120,7 @@
           <commandLine>-O3 -DMPICH_IGNORE_CXX_SEEK -llapack -lblas -larmadillo</commandLine>
         </ccTool>
         <linkerTool>
-          <output>${TESTDIR}/TestFiles/f1</output>
+          <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmc2</output>
         </linkerTool>
       </compileType>
     </conf>
@@ -140,17 +140,17 @@
         </cTool>
         <ccTool>
           <commandlineTool>mpicxx</commandlineTool>
-          <commandLine>-O3 -DMPICH_IGNORE_CXX_SEEK -llapack -lblas -larmadillo</commandLine>
+          <commandLine>-DMPICH_IGNORE_CXX_SEEK -llapack -lblas -larmadillo</commandLine>
         </ccTool>
         <linkerTool>
-          <output>${TESTDIR}/TestFiles/f2</output>
+          <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmc2</output>
           <linkerLibItems>
             <linkerLibLibItem>armadillo</linkerLibLibItem>
           </linkerLibItems>
         </linkerTool>
       </compileType>
     </conf>
-    <conf name="ReleaseHjemme" type="1">
+    <conf name="Release" type="1">
       <toolsSet>
         <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
         <compilerSet>default</compilerSet>
@@ -170,14 +170,9 @@
         <asmTool>
           <developmentMode>5</developmentMode>
         </asmTool>
-        <linkerTool>
-          <linkerLibItems>
-            <linkerLibLibItem>armadillo</linkerLibLibItem>
-          </linkerLibItems>
-        </linkerTool>
       </compileType>
     </conf>
-    <conf name="Release" type="1">
+    <conf name="Release4Nodes" type="1">
       <toolsSet>
         <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
         <compilerSet>default</compilerSet>
@@ -216,7 +211,33 @@
           <commandLine>-pg -O3 -DMPICH_IGNORE_CXX_SEEK -llapack -lblas -larmadillo</commandLine>
         </ccTool>
         <linkerTool>
-          <output>${TESTDIR}/TestFiles/f2</output>
+          <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmc2</output>
+        </linkerTool>
+      </compileType>
+    </conf>
+    <conf name="ReleaseHjemme" type="1">
+      <toolsSet>
+        <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
+        <compilerSet>default</compilerSet>
+      </toolsSet>
+      <compileType>
+        <cTool>
+          <incDir>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+            <pElem>.</pElem>
+          </incDir>
+        </cTool>
+        <ccTool>
+          <developmentMode>5</developmentMode>
+          <architecture>2</architecture>
+          <commandlineTool>mpicxx</commandlineTool>
+          <commandLine>-O3 -DMPICH_IGNORE_CXX_SEEK -llapack -lblas -larmadillo</commandLine>
+          <warningLevel>0</warningLevel>
+        </ccTool>
+        <linkerTool>
+          <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmc2</output>
           <linkerLibItems>
             <linkerLibLibItem>armadillo</linkerLibLibItem>
           </linkerLibItems>

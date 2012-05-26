@@ -71,15 +71,15 @@ FFLAGS=
 ASFLAGS=
 
 # Link Libraries and Options
-LDLIBSOPTIONS=-larmadillo
+LDLIBSOPTIONS=
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${TESTDIR}/TestFiles/f2
+	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmc2
 
-${TESTDIR}/TestFiles/f2: ${OBJECTFILES}
-	${MKDIR} -p ${TESTDIR}/TestFiles
-	${LINK.cc} -o ${TESTDIR}/TestFiles/f2 ${OBJECTFILES} ${LDLIBSOPTIONS} 
+${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmc2: ${OBJECTFILES}
+	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
+	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmc2 ${OBJECTFILES} ${LDLIBSOPTIONS} 
 
 ${OBJECTDIR}/QD/QDJastrow.o: QD/QDJastrow.cpp 
 	${MKDIR} -p ${OBJECTDIR}/QD
@@ -192,7 +192,7 @@ ${OBJECTDIR}/ComputeGrid.o: ComputeGrid.cpp
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
 	${RM} -r ${CND_BUILDDIR}/${CND_CONF}
-	${RM} ${TESTDIR}/TestFiles/f2
+	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/vmc2
 
 # Subprojects
 .clean-subprojects:

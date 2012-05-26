@@ -75,7 +75,7 @@ Blocking::Blocking(int nNodes) {
     ofstream outStream;
     outStream.open("DATA/Blocking/blockingResults.dat");
 
-    for (int i = 1; i < maxBlockSize / deltaBlockSize; i++) {
+    for (int i = 1; i <= maxBlockSize / double(deltaBlockSize); i++) {
         blockSize = i*deltaBlockSize;
         results = block(McData, blockSize, N);
         mean = results(0);
@@ -90,6 +90,7 @@ Blocking::Blocking(int nNodes) {
 vec Blocking::block(vec McData, int blockSize, int N_samples) {
 
     int NBlocks = N_samples / blockSize;
+
     vec results = zeros(2, 1);
     vec EBlock = zeros(NBlocks, 1);
 
@@ -104,7 +105,7 @@ vec Blocking::block(vec McData, int blockSize, int N_samples) {
         EBlock(i) = deltaE / blockSize;
     }
 
-    // Calulating the mean and variance of all the blocks
+    // Calculating the mean and variance of all the blocks
     double E = 0;
     double E2 = 0;
     for (int i = 0; i < NBlocks; i++) {

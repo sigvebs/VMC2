@@ -26,15 +26,19 @@
                     <type>1</type>
                 </confElem>
                 <confElem>
-                    <name>ReleaseHjemme</name>
-                    <type>1</type>
-                </confElem>
-                <confElem>
                     <name>Release</name>
                     <type>1</type>
                 </confElem>
                 <confElem>
+                    <name>Release4Nodes</name>
+                    <type>1</type>
+                </confElem>
+                <confElem>
                     <name>Profiler</name>
+                    <type>1</type>
+                </confElem>
+                <confElem>
+                    <name>ReleaseHjemme</name>
                     <type>1</type>
                 </confElem>
             </confList>
