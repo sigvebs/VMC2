@@ -17,7 +17,7 @@ public:
     Blocking(int);
     Blocking(const Blocking& orig);
     virtual ~Blocking();
-    vec block(vec, int, int);
+    vec block(vec, int);
 private:
 
 };

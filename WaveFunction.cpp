@@ -38,10 +38,10 @@ WaveFunction::WaveFunction(int dim, int nParticles, long idum, Orbital *orbital,
         usingJastrow = false;
 
     // Initializing positions
-    ini INIreader("QD.ini");
     int myRank;
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     if (myRank == 0) {
+        ini INIreader("QD.ini");
         dt = INIreader.GetDouble("main", "dt");
     }
     MPI_Bcast(&dt, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -49,7 +49,7 @@ WaveFunction::WaveFunction(int dim, int nParticles, long idum, Orbital *orbital,
     sqrtDt = sqrt(dt);
     D = 0.5;
 
-    rOld = 2*randn(nParticles, dim);
+    rOld = 2 * randn(nParticles, dim);
     rNew = rOld;
     slater->setPosition(rNew, 0);
     slater->init();
@@ -67,7 +67,7 @@ WaveFunction::WaveFunction(const WaveFunction& orig) {
     stepLength = orig.stepLength;
 
     rOld = orig.rOld;
-    
+
     rNew = orig.rNew;
 
     qForce = orig.qForce;
@@ -161,7 +161,7 @@ bool WaveFunction::tryNewPosition(int active) {
     slater->updateMatrix();
     double R = WFRatio();
     slater->updateInverse();
-   
+
     // Updating the quantum force.
     qForce = newQForce();
     //--------------------------------------------------------------------------
@@ -182,7 +182,7 @@ bool WaveFunction::tryNewPosition(int active) {
     // Metropolis-Hastings acceptance test.
     //--------------------------------------------------------------------------
     R = R * R * greensFunction;
-    test();
+
     if (ran3(&idum) <= R) {
         accepted = true;
         rOld = rNew;

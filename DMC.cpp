@@ -113,6 +113,7 @@ DMC::DMC() {
     // WF is copied into a new walker. This way we get a good sampling of
     // the WF distribution.
     //--------------------------------------------------------------------------
+    string VMCDistFileName = "DATA/distributionVMC.dat";
     if (myRank == 0) {
         cout
                 << "Initializing walkers using VMC,"
@@ -120,8 +121,12 @@ DMC::DMC() {
                 << "\t correlationLength = " << correlationLength
                 << "\t nWalkers = " << nWalkers
                 << endl;
+        // Zeroing out VMCdistribution file.
+        ofstream out;
+        out.open((const char*) &VMCDistFileName[0], ios::out |ios::binary);
+        out.close();
     }
-#if 1
+
     McSamples = correlationLength*nWalkers;
     double ETrial = 0;
     int cWalker = 0;
@@ -138,11 +143,13 @@ DMC::DMC() {
         if (i > thermalization) {
             ETrial += wf.sampleEnergy();
 
+            if (i % 1 == 0) {
+                writeDistributionToFileVMC(&wf, VMCDistFileName);
+            }
             // Cloning a walker
             if (i % (correlationLength) == 0) {
                 walkers.push_back(wf.clone());
                 cWalker++;
-
                 if (myRank == 0) {
                     cout << "Cloning walker " << cWalker << "\xd";
                 }
@@ -157,53 +164,6 @@ DMC::DMC() {
                 << "Trial energy after VMC: E = " << ETrial << endl;
     }
 
-#else //  Initiating each walker with its own VMC run.
-    double ETrial = 0;
-    int samples = 0;
-    for (int k = 0; k < nWalkers; k++) {
-        // Giving each walker a unique seed.
-        idum = -1 - myRank - time(NULL) - k;
-
-        Orbital *orbital = new QDOrbital(dim, alpha, w);
-        Jastrow * jastrow = NULL;
-        if (usingJastrow)
-            jastrow = new QDJastrow(dim, nParticles, beta);
-
-        Hamiltonian *hamiltonian = new QDHamiltonian(dim, nParticles, w, usingJastrow);
-        WaveFunction *wf = new WaveFunction(dim, nParticles, idum, orbital, jastrow, hamiltonian);
-
-        // If we are using brute force sampling we have to calculate 
-        // the optimal step length.
-        if (!importanceSampling)
-            wf->setOptimalStepLength();
-
-        // Thermalizing walker.
-        for (int i = 0; i < thermalization + McSamples; i++) {
-            for (int j = 0; j < nParticles; j++) {
-                if (importanceSampling)
-                    wf->tryNewPosition(j);
-                else
-                    wf->tryNewPositionBF(j);
-            }
-            if (i >= thermalization) {
-                ETrial += wf->sampleEnergy();
-                samples++;
-            }
-        }
-
-        // Storing walker.
-        walkers.push_back(wf);
-        cout << "walker " << k << " initialized" << "\xd";
-    }
-
-    ETrial /= samples;
-    if (myRank == 0) {
-        cout
-                << walkers.size() << " walkers created" << endl
-                << "Trial energy after VMC: E = " << ETrial << endl;
-    }
-#endif
-
     //--------------------------------------------------------------------------
     // Thermalizing walkers using DMC. The trial energy is updated each time 
     // the walkers are moved. The bad walkers are killed. The good ones get
@@ -211,9 +171,7 @@ DMC::DMC() {
     //--------------------------------------------------------------------------
     if (myRank == 0) {
         cout << "Starting DMC thermalization" << endl;
-        writeDistributionToFile("DATA/DMC/distributionVMC.dat");
     }
-    //exit(0);
 
     WaveFunction *toBeKilled;
     int walkersLength, NSamples, copies;
@@ -286,14 +244,13 @@ DMC::DMC() {
                     << "\t nKilled = " << nKilled
                     << "\t nCloned = " << nCloned
                     << "\xd";
-            //<< endl;
         }
     }
-
     //--------------------------------------------------------------------------
     // DMC sampling. The trial energy is updated after every walker has moved
     // a block. 
-    //--------------------------------------------------------------------------    
+    //--------------------------------------------------------------------------   
+    string DMCDistFileName = "DATA/distributionDMC.dat"; 
     ofstream outStream;
     if (myRank == 0) {
         cout
@@ -303,8 +260,10 @@ DMC::DMC() {
         outStream.open((const char*) &fileName[0]);
         // Writing to file
         outStream << nParticles << " " << w << " " << DMCSamples << " " << blockSize << endl;
-
-        writeDistributionToFile("DATA/DMC/distributionThermal.dat");
+        
+        ofstream out;
+        out.open((const char*) &DMCDistFileName[0], ios::out |ios::binary);
+        out.close();
     }
 
     EAvg = 0;
@@ -380,13 +339,13 @@ DMC::DMC() {
                 outStream << EBlock << endl;
             }
         }
+        writeDistributionToFile(DMCDistFileName);
     }
 
     //--------------------------------------------------------------------------
     if (myRank == 0)
         outStream.close();
 
-    writeDistributionToFile("DATA/DMC/distributionDMC.dat");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -399,22 +358,44 @@ DMC::DMC(const DMC & orig) {
 DMC::~DMC() {
 }
 
-void DMC::writeDistributionToFile(string fName) {
+////////////////////////////////////////////////////////////////////////////////
+
+void DMC::writeDistributionToFileVMC(WaveFunction * wf, string fName) {
     // Writing the current distribution of particles to file
     mat r;
     ofstream out;
-    out.open((const char*) &fName[0]);
-    for (int i = 0; i < walkers.size(); i++) {
-        r = walkers[i]->getROld();
-        for (int j = 0; j < nParticles; j++) {
-            for (int d = 0; d < dim; d++) {
-                out << r(j, d) << " ";
-            }
-            out << endl;
+    out.open((const char*) &fName[0], ios::out | ios::app | ios::binary);
+    r = wf->getROld();
+    for (int j = 0; j < nParticles; j++) {
+        for (int d = 0; d < dim; d++) {
+            double coordiante = r(j, d);
+            out.write((char*) &coordiante, sizeof (double));
         }
     }
     out.close();
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void DMC::writeDistributionToFile(string fName) {
+    // Writing the current distribution of particles to file
+    mat r;
+    ofstream out;
+    out.open((const char*) &fName[0], ios::out | ios::app | ios::binary);
+    for (int i = 0; i < walkers.size(); i++) {
+        r = walkers[i]->getROld();
+        for (int j = 0; j < nParticles; j++) {
+            for (int d = 0; d < dim; d++) {
+                double coordiante = r(j, d);
+                out.write((char*) &coordiante, sizeof (double));
+            }
+        }
+    }
+    out.close();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 // Renormalizing the number of walkers.
 //----------------------------------------------------------------------
 /*

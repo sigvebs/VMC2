@@ -21,63 +21,68 @@
 Blocking::Blocking() {
 
 }
- 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 Blocking::Blocking(int nNodes) {
     int localN;
     int N;
-    int deltaBlockSize = 10;
-    int maxBlockSize = (int) 1e4;
-    
-    cout << "Starting blocking analysis." <<endl;
-    
+
+    cout << "Starting blocking analysis." << endl;
+
     //--------------------------------------------------------------------------
     // Collecting file size information.
     struct stat result;
-    if (stat("DATA/Blocking/blocking_0.dat", &result) == 0) {
+    if (stat("DATA/blocking_0.dat", &result) == 0) {
         localN = result.st_size / sizeof (double);
         N = localN*nNodes;
-    }else{
+    } else {
         cout << "Could not find file.";
         exit(1);
     }
     
-    double* McResults = new double[localN];
-
+    int deltaBlockSize = 10;
+    int maxBlockSize = (int) N/20;
+    
+    if(maxBlockSize > 1e4){
+        maxBlockSize = 1e4;
+    }
+        
     //--------------------------------------------------------------------------
     // Collecting data
-    cout << "Reading data from files." <<endl;
-    
+    cout << "Reading data from files." << endl;
+
     vec McData = zeros(N, 1);
+    double* McResults = new double[localN];
+    int k = 0;
+    
     for (int i = 0; i < nNodes; i++) {
         ostringstream ost;
-        ost << "DATA/Blocking/blocking_" << i << ".dat";
+        ost << "DATA/blocking_" << i << ".dat";
         ifstream infile;
         infile.open(ost.str().c_str(), ios::in | ios::binary);
         infile.read((char*) McResults, result.st_size);
         infile.close();
-        
-        for (int j = 0; j < localN; j++)
-            McData(j + i * localN) += McResults[j];
-    }
 
-    McData /= nNodes;
+        for (int j = 0; j < localN; j++)
+            McData[k++] = McResults[j];
+        }
+
     delete McResults;
     //--------------------------------------------------------------------------
     // Looping over block sizes and storing results.
-    cout << "Looping over block sizes and storing results." <<endl;
-    
+    cout << "Looping over block sizes and storing results." << endl;
+
     int blockSize;
     vec results;
     double mean, sigma;
 
     ofstream outStream;
-    outStream.open("DATA/Blocking/blockingResults.dat");
+    outStream.open("DATA/blockingResults.dat");
 
-    for (int i = 1; i <= maxBlockSize / double(deltaBlockSize); i++) {
+    for (int i = 1; i*deltaBlockSize <= maxBlockSize; i++) {
         blockSize = i*deltaBlockSize;
-        results = block(McData, blockSize, N);
+        results = block(McData, blockSize);
         mean = results(0);
         sigma = results(1);
         outStream << blockSize << "\t" << mean << "\t" << sigma << "\n";
@@ -87,10 +92,9 @@ Blocking::Blocking(int nNodes) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-vec Blocking::block(vec McData, int blockSize, int N_samples) {
-
-    int NBlocks = N_samples / blockSize;
-
+vec Blocking::block(vec McData, int blockSize) {
+    int NSamples = McData.size();
+    int NBlocks = int(NSamples / blockSize);
     vec results = zeros(2, 1);
     vec EBlock = zeros(NBlocks, 1);
 
@@ -114,10 +118,9 @@ vec Blocking::block(vec McData, int blockSize, int N_samples) {
     }
     E /= NBlocks;
     E2 /= NBlocks;
-    
-    double sigma = E2 - E*E;
 
-    sigma = sqrt(sigma / NBlocks);
+    double sigma = E2 - E*E;
+    sigma = sqrt(sigma/NBlocks);
     results(0) = E;
     results(1) = sigma;
 

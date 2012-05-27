@@ -108,7 +108,7 @@ ComputeOneWF::ComputeOneWF() {
     // If Blocking
     //--------------------------------------------------------------------------
     ostringstream filename;
-    filename << "DATA/Blocking/blocking_" << myRank << ".dat";
+    filename << "DATA/blocking_" << myRank << ".dat";
     ofstream blockfile(filename.str().c_str(), ios::out | ios::binary);
     //--------------------------------------------------------------------------
     // Monte Carlo loop.    
@@ -152,9 +152,10 @@ ComputeOneWF::ComputeOneWF() {
     //--------------------------------------------------------------------------
     // Collecting and scaling results from all nodes.
     //--------------------------------------------------------------------------
-    if (myRank == 0)
+    if (myRank == 0){
         cout << "Collecting and scaling results from all nodes." << endl;
-
+    }
+    
     MPI_Allreduce(MPI_IN_PLACE, &E, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &Esq, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &accepted, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -171,6 +172,7 @@ ComputeOneWF::ComputeOneWF() {
                 << "\tVariance = " << Esq - E * E
                 << "\tAccepted = " << accepted
                 << endl;
+        
         //Writing results to file
         ofstream outStream;
         outStream.open((const char*) &fileName[0]);
@@ -183,12 +185,14 @@ ComputeOneWF::ComputeOneWF() {
                 << "\tVariance = " << Esq - E * E
                 << "\tAccepted = " << accepted
                 << endl;
+        
         outStream
                 << nParticles << " & "
                 << w << " & "
                 << E << " & "
                 << Esq - E * E << " \\\\"
                 << endl;
+        
         outStream.close();
     }
 }

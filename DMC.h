@@ -21,10 +21,11 @@ public:
     virtual ~DMC();
 
     void writeDistributionToFile(std::string);
+    void writeDistributionToFileVMC(WaveFunction*, std::string);
     WaveFunction* thermalizedWalker();
 private:
     int myRank, nNodes;
-    
+
     double E;
     double ET;
     double Esq;
@@ -42,7 +43,7 @@ private:
     double alpha, beta, w;
     int dim;
     double tau;
-    
+
     std::vector<WaveFunction*> walkers;
 };
 
