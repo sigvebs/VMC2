@@ -28,6 +28,7 @@ DMC::DMC() {
     string fileName;
     bool writeToFile = false;
     int DMCThermal, blockSize, correlationLength;
+    
     //--------------------------------------------------------------------------
     // MPI
     int myRank, nNodes;
